@@ -29,7 +29,9 @@
     <!-- SECCIÓN 1: HERO -->
     @if($heroSeccion)
     @php
-    $bgStyle = $heroSeccion->ruta_image ? "background-image: url('" . asset('storage/' . $heroSeccion->ruta_image) . "'); background-size: cover; background-position: center;" : "";
+    $bgStyle = $heroSeccion->ruta_image 
+    ? "background-image: url('" . asset($heroSeccion->ruta_image) . "'); background-size: cover; background-position: center;" 
+    : "";
     $hasBg = $heroSeccion->ruta_image ? 'bg-opacity-70 bg-gray-900 text-white' : '';
 
     // Obtener contenidos del hero

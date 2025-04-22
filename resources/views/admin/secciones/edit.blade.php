@@ -27,7 +27,7 @@
                     <label for="imagen" class="block text-sm font-medium text-gray-700 mb-1">Imagen de Fondo</label>
                     @if($seccion->ruta_image)
                         <div class="mb-3">
-                            <img src="{{ asset('storage/' . $seccion->ruta_image) }}" alt="{{ $seccion->seccion }}" 
+                            <img src="{{ asset($seccion->ruta_image) }}" alt="{{ $seccion->seccion }}" 
                                  class="max-h-48 rounded-md shadow-sm">
                         </div>
                     @endif

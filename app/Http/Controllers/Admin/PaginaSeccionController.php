@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -30,12 +31,15 @@ class PaginaSeccionController extends Controller
 
         $data = $request->all();
         $data['pagina_id'] = $pagina->id;
-        
-        // Manejar la carga de la imagen
+
         if ($request->hasFile('imagen')) {
-            $path = $request->file('imagen')->store('secciones', 'public');
-            $data['ruta_image'] = $path;
+            // En lugar de usar el disco 'public', guardar directamente en public/images/secciones
+            $imagen = $request->file('imagen');
+            $nombreArchivo = time() . '_' . $imagen->getClientOriginalName();
+            $imagen->move(public_path('images/secciones'), $nombreArchivo);
+            $data['ruta_image'] = 'images/secciones/' . $nombreArchivo;
         }
+
 
         PaginaSeccion::create($data);
 
@@ -57,16 +61,18 @@ class PaginaSeccionController extends Controller
         ]);
 
         $data = $request->all();
-        
-        // Manejar la carga de la imagen
+
         if ($request->hasFile('imagen')) {
             // Eliminar la imagen anterior si existe
-            if ($seccion->ruta_image && Storage::disk('public')->exists($seccion->ruta_image)) {
-                Storage::disk('public')->delete($seccion->ruta_image);
+            if ($seccion->ruta_image && file_exists(public_path($seccion->ruta_image))) {
+                unlink(public_path($seccion->ruta_image));
             }
-            
-            $path = $request->file('imagen')->store('secciones', 'public');
-            $data['ruta_image'] = $path;
+
+            // Guardar la nueva imagen en public/images/secciones
+            $imagen = $request->file('imagen');
+            $nombreArchivo = time() . '_' . $imagen->getClientOriginalName();
+            $imagen->move(public_path('images/secciones'), $nombreArchivo);
+            $data['ruta_image'] = 'images/secciones/' . $nombreArchivo;
         }
 
         $seccion->update($data);
@@ -77,11 +83,11 @@ class PaginaSeccionController extends Controller
 
     public function destroy(Pagina $pagina, PaginaSeccion $seccion)
     {
-        // Eliminar la imagen si existe
-        if ($seccion->ruta_image && Storage::disk('public')->exists($seccion->ruta_image)) {
-            Storage::disk('public')->delete($seccion->ruta_image);
+        // Método destroy:
+        if ($seccion->ruta_image && file_exists(public_path($seccion->ruta_image))) {
+            unlink(public_path($seccion->ruta_image));
         }
-        
+
         $seccion->delete();
 
         return redirect()->route('admin.paginas.secciones.index', $pagina)

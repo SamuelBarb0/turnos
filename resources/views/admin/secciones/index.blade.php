@@ -41,7 +41,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $seccion->seccion }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($seccion->ruta_image)
-                                <img src="{{ asset('storage/' . $seccion->ruta_image) }}" alt="{{ $seccion->seccion }}" class="h-12 w-auto object-cover rounded">
+                                <img src="{{ asset($seccion->ruta_image) }}" alt="{{ $seccion->seccion }}" class="h-12 w-auto object-cover rounded">
                             @else
                                 <span class="text-gray-500 text-sm">Sin imagen</span>
                             @endif
