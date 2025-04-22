@@ -51,7 +51,7 @@
                         Cancelar
                     </a>
                     <button type="submit" 
-                            class="px-4 py-2 bg-agendux-blue hover:bg-blue-700 text-white rounded-md transition duration-300">
+                            class="bg-blue-600 hover:bg-blue-800 text-white px-4 py-2 rounded-lg transition duration-300 flex items-center">
                         Guardar
                     </button>
                 </div>

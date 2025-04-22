@@ -7,7 +7,7 @@
             <h1 class="text-2xl font-bold text-gray-800">Administración de Páginas</h1>
         </div>
         <div>
-            <a href="{{ route('admin.paginas.create') }}" class="bg-agendux-blue hover:bg-blue-800 text-white px-4 py-2 rounded-lg transition duration-300 flex items-center">
+            <a href="{{ route('admin.paginas.create') }}" class="bg-blue-600 hover:bg-blue-800 text-white px-4 py-2 rounded-lg transition duration-300 flex items-center">
                 <i class="fas fa-plus mr-2"></i> Nueva Página
             </a>
         </div>

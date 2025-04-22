@@ -18,15 +18,18 @@
     <!-- Tailwind CSS (fallback) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        adineue: ['Adineue Pro', 'sans-serif'],
-                    },
-                }
+tailwind.config = {
+    theme: {
+        extend: {
+            fontFamily: {
+                adineue: ['Adineue Pro', 'sans-serif'],
+            },
+            colors: {
+                'agendux-blue': '#1E40AF', // Puedes cambiar este color al que desees
             }
         }
+    }
+}
     </script>
     @endif
 
