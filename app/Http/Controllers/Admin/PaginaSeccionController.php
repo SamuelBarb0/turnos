@@ -33,12 +33,21 @@ class PaginaSeccionController extends Controller
         $data['pagina_id'] = $pagina->id;
 
         if ($request->hasFile('imagen')) {
-            // En lugar de usar el disco 'public', guardar directamente en public/images/secciones
             $imagen = $request->file('imagen');
             $nombreArchivo = time() . '_' . $imagen->getClientOriginalName();
-            $imagen->move(public_path('images/secciones'), $nombreArchivo);
-            $data['ruta_image'] = 'images/secciones/' . $nombreArchivo;
+            
+            // Guardar directamente en public_html/images/secciones
+            $rutaDestino = base_path('../public_html/images/secciones');
+            
+            // Crear el directorio si no existe
+            if (!file_exists($rutaDestino)) {
+                mkdir($rutaDestino, 0755, true);
+            }
+            
+            $imagen->move($rutaDestino, $nombreArchivo);
+            $data['ruta_image'] = '/images/secciones/' . $nombreArchivo;
         }
+        
 
 
         PaginaSeccion::create($data);
@@ -64,15 +73,21 @@ class PaginaSeccionController extends Controller
 
         if ($request->hasFile('imagen')) {
             // Eliminar la imagen anterior si existe
-            if ($seccion->ruta_image && file_exists(public_path($seccion->ruta_image))) {
-                unlink(public_path($seccion->ruta_image));
+            if ($seccion->ruta_image && file_exists(base_path('../public_html' . $seccion->ruta_image))) {
+                unlink(base_path('../public_html' . $seccion->ruta_image));
             }
-
-            // Guardar la nueva imagen en public/images/secciones
+            
             $imagen = $request->file('imagen');
             $nombreArchivo = time() . '_' . $imagen->getClientOriginalName();
-            $imagen->move(public_path('images/secciones'), $nombreArchivo);
-            $data['ruta_image'] = 'images/secciones/' . $nombreArchivo;
+            $rutaDestino = base_path('../public_html/images/secciones');
+            
+            // Crear el directorio si no existe
+            if (!file_exists($rutaDestino)) {
+                mkdir($rutaDestino, 0755, true);
+            }
+            
+            $imagen->move($rutaDestino, $nombreArchivo);
+            $data['ruta_image'] = '/images/secciones/' . $nombreArchivo;
         }
 
         $seccion->update($data);
@@ -84,8 +99,8 @@ class PaginaSeccionController extends Controller
     public function destroy(Pagina $pagina, PaginaSeccion $seccion)
     {
         // Método destroy:
-        if ($seccion->ruta_image && file_exists(public_path($seccion->ruta_image))) {
-            unlink(public_path($seccion->ruta_image));
+        if ($seccion->ruta_image && file_exists(base_path('../public_html' . $seccion->ruta_image))) {
+            unlink(base_path('../public_html' . $seccion->ruta_image));
         }
 
         $seccion->delete();
