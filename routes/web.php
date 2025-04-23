@@ -28,8 +28,9 @@ Route::get('login/google', [GoogleController::class, 'redirectToGoogle'])->name(
 Route::get('login/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return redirect()->route('admin.paginas.index');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
