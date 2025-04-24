@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\Blog;
+use App\Models\SeoMetadata;
 
 class BlogController extends Controller
 {
@@ -211,7 +212,7 @@ class BlogController extends Controller
      * MÉTODOS PARA EL FRONTEND
      */
 
-    /**
+/**
      * Muestra la lista de artículos en el blog público
      */
     public function showBlog()
@@ -225,7 +226,12 @@ class BlogController extends Controller
         // Obtener todas las páginas
         $paginas = \App\Models\Pagina::all();
         
-        return view('blog', compact('articulos', 'paginas'));
+        // Obtener metadatos SEO para el blog
+        $seo = SeoMetadata::where('page_slug', 'blog')
+                          ->orWhere('page_slug', '/blog')
+                          ->first();
+        
+        return view('blog', compact('articulos', 'paginas', 'seo'));
     }
     
     /**

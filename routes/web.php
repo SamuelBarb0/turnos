@@ -5,6 +5,7 @@ use App\Http\Controllers\CitaController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Admin\PaginaController;
 use App\Http\Controllers\Admin\BlogController;
+use App\Http\Controllers\Admin\SeoMetadataController;
 use App\Http\Controllers\Admin\PaginaSeccionController;
 use App\Http\Controllers\Admin\ContenidoSeccionController;
 use Illuminate\Support\Facades\Route;
@@ -12,16 +13,22 @@ use Illuminate\Support\Facades\Route;
 // Importa las rutas de autenticación primero
 require __DIR__ . '/auth.php';
 
+
 Route::get('/', function () {
     $pagina = \App\Models\Pagina::where('slug', 'inicio')->orWhere('slug', '')->first();
 
+    // Obtener metadatos SEO para la página de inicio
+    $seo = \App\Models\SeoMetadata::where('page_slug', 'home')
+                                  ->orWhere('page_slug', '/')
+                                  ->first();
+
     // Si no existe una página, muestra welcome sin datos dinámicos
     if (!$pagina) {
-        return view('welcome');
+        return view('welcome', compact('seo'));
     }
 
-    // Si existe la página, pasa la variable a la vista
-    return view('welcome', compact('pagina'));
+    // Si existe la página, pasa las variables a la vista
+    return view('welcome', compact('pagina', 'seo'));
 })->name('home');
 
 // Rutas para el blog (frontend) - Ahora usan el controlador
@@ -89,6 +96,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         ->name('secciones.contenidos.update');
     Route::delete('secciones/{seccion}/contenidos/{contenido}', [ContenidoSeccionController::class, 'destroy'])
         ->name('secciones.contenidos.destroy');
+
+    Route::get('/seo', [SeoMetadataController::class, 'index'])->name('seo.index');
+    Route::get('/seo/create', [SeoMetadataController::class, 'create'])->name('seo.create');
+    Route::post('/seo', [SeoMetadataController::class, 'store'])->name('seo.store');
+    Route::get('/seo/{id}/edit', [SeoMetadataController::class, 'edit'])->name('seo.edit');
+    Route::put('/seo/{id}', [SeoMetadataController::class, 'update'])->name('seo.update');
+    Route::delete('/seo/{id}', [SeoMetadataController::class, 'destroy'])->name('seo.destroy');
 
     // Gestión del blog (CRUD)
     Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
