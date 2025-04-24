@@ -22,7 +22,7 @@ Route::get('/', function () {
 
     // Si existe la página, pasa la variable a la vista
     return view('welcome', compact('pagina'));
-});
+})->name('home');
 
 // Rutas para el blog (frontend) - Ahora usan el controlador
 Route::get('/blog', [BlogController::class, 'showBlog'])->name('blog.index');

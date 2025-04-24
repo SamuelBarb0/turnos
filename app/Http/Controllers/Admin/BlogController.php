@@ -222,7 +222,10 @@ class BlogController extends Controller
                         ->orderBy('fecha_publicacion', 'desc')
                         ->get();
         
-        return view('blog', compact('articulos'));
+        // Obtener todas las páginas
+        $paginas = \App\Models\Pagina::all();
+        
+        return view('blog', compact('articulos', 'paginas'));
     }
     
     /**
