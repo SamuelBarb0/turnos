@@ -6,20 +6,20 @@ $footerSeccion = null;
 @endphp
 
 @php
-    // Obtener la configuración del blog
-    $blogSettings = \App\Models\BlogSettings::first();
-    $blogTitle = $blogSettings->title ?? 'Blog de Agendux';
-    $blogDescription = $blogSettings->description ?? 'Amplía tus conocimientos sobre gestión de citas y organización personal con los mejores consejos de Agendux.';
-    $blogBgColor = $blogSettings->background_color ?? '#f9fafb';
-    
-    // Convertir el color HEX a una clase de Tailwind si es posible
-    $bgClass = 'bg-gray-50'; // Valor predeterminado
-    if ($blogBgColor === '#f9fafb') {
-        $bgClass = 'bg-gray-50';
-    } elseif ($blogBgColor === '#111827') {
-        $bgClass = 'bg-gray-900';
-    }
-    // Puedes añadir más conversiones según sea necesario
+// Obtener la configuración del blog
+$blogSettings = \App\Models\BlogSettings::first();
+$blogTitle = $blogSettings->title ?? 'Blog de Agendux';
+$blogDescription = $blogSettings->description ?? 'Amplía tus conocimientos sobre gestión de citas y organización personal con los mejores consejos de Agendux.';
+$blogBgColor = $blogSettings->background_color ?? '#f9fafb';
+
+// Convertir el color HEX a una clase de Tailwind si es posible
+$bgClass = 'bg-gray-50'; // Valor predeterminado
+if ($blogBgColor === '#f9fafb') {
+$bgClass = 'bg-gray-50';
+} elseif ($blogBgColor === '#111827') {
+$bgClass = 'bg-gray-900';
+}
+// Puedes añadir más conversiones según sea necesario
 @endphp
 
 <div class="{{ $bgClass }} dark:bg-gray-900 py-12" style="background-color: {{ $blogBgColor }};">
@@ -38,9 +38,9 @@ $footerSeccion = null;
             <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg transition-transform duration-300 hover:shadow-xl hover:-translate-y-1">
                 <a href="{{ route('blog.show', $articulo->slug) }}" class="block">
                     @if($articulo->imagen)
-                        <img src="{{ asset('storage/' . $articulo->imagen) }}" alt="{{ $articulo->titulo }}" class="w-full h-48 object-cover">
+                    <img src="{{ $articulo->imagen }}" alt="{{ $articulo->titulo }}" class="w-full h-48 object-cover">
                     @else
-                        <img src="/api/placeholder/640/360" alt="{{ $articulo->titulo }}" class="w-full h-48 object-cover">
+                    <img src="/api/placeholder/640/360" alt="{{ $articulo->titulo }}" class="w-full h-48 object-cover">
                     @endif
                 </a>
                 <div class="p-6">
@@ -142,79 +142,79 @@ $footerSeccion = null;
 <!-- Footer exactamente como el compartido -->
 @if($footerSeccion)
 @php
-    // Obtener contenidos de "Footer"
-    $footerColumns = [];
-    $copyright = date('Y') . ' Todos los derechos reservados';
-    $currentColumn = null;
-    
-    foreach($footerSeccion->contenidos()->orderBy('orden')->get() as $contenido) {
-        if($contenido->etiqueta == 'h3') {
-            // Si hay una columna anterior, guardarla
-            if($currentColumn) {
-                $footerColumns[] = $currentColumn;
-            }
-            
-            // Iniciar nueva columna
-            $currentColumn = [
-                'title' => $contenido->contenido,
-                'links' => []
-            ];
-        } elseif($contenido->etiqueta == 'ul' && $currentColumn) {
-            // Procesar links
-            $linkTexts = preg_split('/\r\n|\r|\n/', $contenido->contenido);
-            foreach($linkTexts as $linkText) {
-                // Buscar formato [texto](url)
-                if(preg_match('/\[([^\]]+)\]\(([^\)]+)\)/', $linkText, $matches)) {
-                    $currentColumn['links'][] = [
-                        'text' => $matches[1],
-                        'url' => $matches[2]
-                    ];
-                } else {
-                    $currentColumn['links'][] = [
-                        'text' => trim($linkText),
-                        'url' => '#'
-                    ];
-                }
-            }
-        } elseif($contenido->etiqueta == 'p' && strpos($contenido->contenido, '©') !== false) {
-            $copyright = $contenido->contenido;
-        }
-    }
-    
-    // Guardar la última columna si existe
-    if($currentColumn) {
-        $footerColumns[] = $currentColumn;
-    }
-    
-    // Valores por defecto
-    if(empty($footerColumns)) {
-        $footerColumns = [
-            [
-                'title' => 'Empresa',
-                'links' => [
-                    ['text' => 'Sobre nosotros', 'url' => '#'],
-                    ['text' => 'Características', 'url' => '#caracteristicas'],
-                    ['text' => 'Precios', 'url' => '#precios']
-                ]
-            ],
-            [
-                'title' => 'Soporte',
-                'links' => [
-                    ['text' => 'Ayuda', 'url' => '#'],
-                    ['text' => 'Contacto', 'url' => '#'],
-                    ['text' => 'FAQ', 'url' => '#']
-                ]
-            ],
-            [
-                'title' => 'Legal',
-                'links' => [
-                    ['text' => 'Términos y Condiciones', 'url' => '#'],
-                    ['text' => 'Política de Privacidad', 'url' => '#'],
-                    ['text' => 'Cookies', 'url' => '#']
-                ]
-            ]
-        ];
-    }
+// Obtener contenidos de "Footer"
+$footerColumns = [];
+$copyright = date('Y') . ' Todos los derechos reservados';
+$currentColumn = null;
+
+foreach($footerSeccion->contenidos()->orderBy('orden')->get() as $contenido) {
+if($contenido->etiqueta == 'h3') {
+// Si hay una columna anterior, guardarla
+if($currentColumn) {
+$footerColumns[] = $currentColumn;
+}
+
+// Iniciar nueva columna
+$currentColumn = [
+'title' => $contenido->contenido,
+'links' => []
+];
+} elseif($contenido->etiqueta == 'ul' && $currentColumn) {
+// Procesar links
+$linkTexts = preg_split('/\r\n|\r|\n/', $contenido->contenido);
+foreach($linkTexts as $linkText) {
+// Buscar formato [texto](url)
+if(preg_match('/\[([^\]]+)\]\(([^\)]+)\)/', $linkText, $matches)) {
+$currentColumn['links'][] = [
+'text' => $matches[1],
+'url' => $matches[2]
+];
+} else {
+$currentColumn['links'][] = [
+'text' => trim($linkText),
+'url' => '#'
+];
+}
+}
+} elseif($contenido->etiqueta == 'p' && strpos($contenido->contenido, '©') !== false) {
+$copyright = $contenido->contenido;
+}
+}
+
+// Guardar la última columna si existe
+if($currentColumn) {
+$footerColumns[] = $currentColumn;
+}
+
+// Valores por defecto
+if(empty($footerColumns)) {
+$footerColumns = [
+[
+'title' => 'Empresa',
+'links' => [
+['text' => 'Sobre nosotros', 'url' => '#'],
+['text' => 'Características', 'url' => '#caracteristicas'],
+['text' => 'Precios', 'url' => '#precios']
+]
+],
+[
+'title' => 'Soporte',
+'links' => [
+['text' => 'Ayuda', 'url' => '#'],
+['text' => 'Contacto', 'url' => '#'],
+['text' => 'FAQ', 'url' => '#']
+]
+],
+[
+'title' => 'Legal',
+'links' => [
+['text' => 'Términos y Condiciones', 'url' => '#'],
+['text' => 'Política de Privacidad', 'url' => '#'],
+['text' => 'Cookies', 'url' => '#']
+]
+]
+];
+}
 @endphp
 
 <footer class="bg-gray-900 text-gray-400 py-12">
@@ -222,28 +222,28 @@ $footerSeccion = null;
         <!-- Links organizados horizontalmente -->
         <div class="flex flex-wrap justify-center mb-12">
             @foreach($footerColumns as $column)
-                <div class="px-8 py-4">
-                    <h4 class="text-lg font-semibold text-white mb-4">{{ $column['title'] }}</h4>
-                    <ul class="space-y-2">
-                        @foreach($column['links'] as $link)
-                            <li><a href="{{ $link['url'] }}" class="hover:text-white transition-colors">{{ $link['text'] }}</a></li>
-                        @endforeach
-                    </ul>
-                </div>
+            <div class="px-8 py-4">
+                <h4 class="text-lg font-semibold text-white mb-4">{{ $column['title'] }}</h4>
+                <ul class="space-y-2">
+                    @foreach($column['links'] as $link)
+                    <li><a href="{{ $link['url'] }}" class="hover:text-white transition-colors">{{ $link['text'] }}</a></li>
+                    @endforeach
+                </ul>
+            </div>
             @endforeach
         </div>
-        
+
         <!-- Línea divisoria -->
         <div class="border-t border-gray-800 mx-auto max-w-4xl"></div>
-        
+
         <!-- Logo y redes sociales -->
         <div class="flex flex-col md:flex-row justify-between items-center max-w-4xl mx-auto mt-8 mb-8">
             <div class="mb-6 md:mb-0">
-            <a href="">
-                            <x-application-logo class="block h-10 w-auto text-[#3161DD]" />
-                        </a>
+                <a href="">
+                    <x-application-logo class="block h-10 w-auto text-[#3161DD]" />
+                </a>
             </div>
-            
+
             <div class="flex space-x-4">
                 <a href="#" class="text-gray-400 hover:text-white transition-colors">
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -262,7 +262,7 @@ $footerSeccion = null;
                 </a>
             </div>
         </div>
-        
+
         <!-- Copyright -->
         <div class="text-center">
             <p>{!! $copyright !!}</p>
