@@ -10,9 +10,6 @@
             <a href="{{ route('admin.paginas.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-300 flex items-center">
                 <i class="fas fa-arrow-left mr-2"></i> Volver a Páginas
             </a>
-            <a href="{{ route('admin.paginas.secciones.create', $pagina) }}" class="bg-blue-600 hover:bg-blue-800 text-white px-4 py-2 rounded-lg transition duration-300 flex items-center">
-                <i class="fas fa-plus mr-2"></i> Nueva Sección
-            </a>
         </div>
     </div>
 
@@ -55,13 +52,6 @@
                                 <a href="{{ route('admin.secciones.contenidos.index', $seccion) }}" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs flex items-center transition duration-300">
                                     <i class="fas fa-list mr-1"></i> Contenidos
                                 </a>
-                                <form action="{{ route('admin.paginas.secciones.destroy', [$pagina, $seccion]) }}" method="POST" class="inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs flex items-center transition duration-300" onclick="return confirm('¿Estás seguro?')">
-                                        <i class="fas fa-trash mr-1"></i> Eliminar
-                                    </button>
-                                </form>
                             </div>
                         </td>
                     </tr>

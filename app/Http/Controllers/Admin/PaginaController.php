@@ -11,7 +11,8 @@ class PaginaController extends Controller
     public function index()
     {
         $paginas = Pagina::all();
-        return view('admin.paginas.index', compact('paginas'));
+        $articulos = \App\Models\Blog::orderBy('created_at', 'desc')->get();
+        return view('admin.paginas.index', compact('paginas', 'articulos'));
     }
 
     public function create()

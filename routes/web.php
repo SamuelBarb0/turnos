@@ -4,24 +4,29 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Admin\PaginaController;
+use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\PaginaSeccionController;
 use App\Http\Controllers\Admin\ContenidoSeccionController;
 use Illuminate\Support\Facades\Route;
 
 // Importa las rutas de autenticación primero
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
 
 Route::get('/', function () {
     $pagina = \App\Models\Pagina::where('slug', 'inicio')->orWhere('slug', '')->first();
-    
+
     // Si no existe una página, muestra welcome sin datos dinámicos
     if (!$pagina) {
         return view('welcome');
     }
-    
+
     // Si existe la página, pasa la variable a la vista
     return view('welcome', compact('pagina'));
 });
+
+// Rutas para el blog (frontend) - Ahora usan el controlador
+Route::get('/blog', [BlogController::class, 'showBlog'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'showArticulo'])->name('blog.show');
 
 // Rutas de autenticación con Google
 Route::get('login/google', [GoogleController::class, 'redirectToGoogle'])->name('login.google');
@@ -84,10 +89,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         ->name('secciones.contenidos.update');
     Route::delete('secciones/{seccion}/contenidos/{contenido}', [ContenidoSeccionController::class, 'destroy'])
         ->name('secciones.contenidos.destroy');
+
+    // Gestión del blog (CRUD)
+    Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+    Route::get('/blog/create', [BlogController::class, 'create'])->name('blog.create');
+    Route::post('/blog', [BlogController::class, 'store'])->name('blog.store');
+    Route::get('/blog/{id}/edit', [BlogController::class, 'edit'])->name('blog.edit');
+    Route::put('/blog/{id}', [BlogController::class, 'update'])->name('blog.update');
+    Route::delete('/blog/{id}', [BlogController::class, 'destroy'])->name('blog.destroy');
+    Route::post('/blog/settings', [BlogController::class, 'updateSettings'])->name('blog.settings.update');
+    Route::post('/blog/upload-image', [BlogController::class, 'uploadImage'])->name('blog.upload-image');
 });
 
 // Ruta para mostrar páginas dinámicas - ESTA DEBE SER LA ÚLTIMA RUTA
 Route::get('/{slug}', function ($slug) {
     $pagina = \App\Models\Pagina::where('slug', $slug)->firstOrFail();
     return view('paginas.show', compact('pagina'));
-})->name('paginas.show')->where('slug', '^(?!login|register|password).*$');
+})->name('paginas.show')->where('slug', '^(?!login|register|password|blog).*$');
