@@ -55,18 +55,20 @@ class BlogController extends Controller
         ]);
         
         // Procesar la imagen si se ha subido
-        $imagenRuta = null;
         if ($request->hasFile('imagen')) {
-            // Generar un nombre de archivo único y seguro
             $imagen = $request->file('imagen');
-            $nombreImagen = Str::slug(pathinfo($imagen->getClientOriginalName(), PATHINFO_FILENAME)) 
-                . '_' . time() 
-                . '.' . $imagen->getClientOriginalExtension();
+            $nombreArchivo = time() . '_' . $imagen->getClientOriginalName();
             
-            // Mover la imagen a public_html
-            $imagen->move(public_path('uploads/blog'), $nombreImagen);
+            // Guardar directamente en public_html/images/blog
+            $rutaDestino = base_path('../public_html/images/blog');
             
-            $imagenRuta = 'uploads/blog/' . $nombreImagen;
+            // Crear el directorio si no existe
+            if (!file_exists($rutaDestino)) {
+                mkdir($rutaDestino, 0755, true);
+            }
+            
+            $imagen->move($rutaDestino, $nombreArchivo);
+            $validatedData['imagen'] = '/images/blog/' . $nombreArchivo;
         }
 
         Blog::create([
@@ -74,7 +76,7 @@ class BlogController extends Controller
             'slug' => $validatedData['slug'],
             'resumen' => $validatedData['resumen'],
             'contenido' => $validatedData['contenido'],
-            'imagen' => $imagenRuta,
+            'imagen' => $validatedData['imagen'] ?? null,
             'categoria' => $validatedData['categoria'],
             'etiquetas' => $validatedData['etiquetas'],
             'autor' => $validatedData['autor'],
@@ -108,8 +110,7 @@ class BlogController extends Controller
         // Validar los datos del formulario
         $validatedData = $request->validate([
             'titulo' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:blogs,slug,' . $id,
-            'resumen' => 'nullable|string|max:500',
+            'slug' => 'required|string|max:255|unique:blogs,slug,' . $id,'resumen' => 'nullable|string|max:500',
             'contenido' => 'required|string',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'categoria' => 'required|string',
@@ -124,19 +125,25 @@ class BlogController extends Controller
         if ($request->hasFile('imagen')) {
             // Eliminar imagen anterior si existe
             if ($articulo->imagen) {
-                @unlink(public_path($articulo->imagen));
+                $rutaAnterior = base_path('../public_html' . $articulo->imagen);
+                if (file_exists($rutaAnterior)) {
+                    unlink($rutaAnterior);
+                }
             }
             
-            // Subir nueva imagen
             $imagen = $request->file('imagen');
-            $nombreImagen = Str::slug(pathinfo($imagen->getClientOriginalName(), PATHINFO_FILENAME)) 
-                . '_' . time() 
-                . '.' . $imagen->getClientOriginalExtension();
+            $nombreArchivo = time() . '_' . $imagen->getClientOriginalName();
             
-            // Mover la imagen a public_html
-            $imagen->move(public_path('uploads/blog'), $nombreImagen);
+            // Guardar directamente en public_html/images/blog
+            $rutaDestino = base_path('../public_html/images/blog');
             
-            $validatedData['imagen'] = 'uploads/blog/' . $nombreImagen;
+            // Crear el directorio si no existe
+            if (!file_exists($rutaDestino)) {
+                mkdir($rutaDestino, 0755, true);
+            }
+            
+            $imagen->move($rutaDestino, $nombreArchivo);
+            $validatedData['imagen'] = '/images/blog/' . $nombreArchivo;
         }
     
         $articulo->update([
@@ -167,7 +174,10 @@ class BlogController extends Controller
         
         // Eliminar la imagen si existe
         if ($articulo->imagen) {
-            @unlink(public_path($articulo->imagen));
+            $rutaImagen = base_path('../public_html' . $articulo->imagen);
+            if (file_exists($rutaImagen)) {
+                unlink($rutaImagen);
+            }
         }
         
         $articulo->delete();
@@ -238,22 +248,23 @@ class BlogController extends Controller
         
         try {
             if ($request->hasFile('image')) {
-                $image = $request->file('image');
-                $imageName = 'content_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                $imagen = $request->file('image');
+                $nombreArchivo = time() . '_' . $imagen->getClientOriginalName();
                 
-                // Crear directorio si no existe
-                $uploadPath = public_path('uploads/blog/content');
-                if (!file_exists($uploadPath)) {
-                    mkdir($uploadPath, 0755, true);
+                // Guardar directamente en public_html/images/blog/content
+                $rutaDestino = base_path('../public_html/images/blog/content');
+                
+                // Crear el directorio si no existe
+                if (!file_exists($rutaDestino)) {
+                    mkdir($rutaDestino, 0755, true);
                 }
                 
-                // Guardar imagen directamente en public_html
-                $image->move($uploadPath, $imageName);
+                $imagen->move($rutaDestino, $nombreArchivo);
                 
                 // Devolver la URL de la imagen
                 return response()->json([
                     'success' => true,
-                    'url' => asset('uploads/blog/content/' . $imageName)
+                    'url' => '/images/blog/content/' . $nombreArchivo
                 ]);
             }
             
