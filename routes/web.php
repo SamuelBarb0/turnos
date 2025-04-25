@@ -4,11 +4,17 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Admin\PaginaController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WelcomeController;
 use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\SeoMetadataController;
 use App\Http\Controllers\Admin\PaginaSeccionController;
 use App\Http\Controllers\Admin\ContenidoSeccionController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\FreePlanMiddleware;
+use App\Http\Controllers\MercadoPagoController;
+use App\Http\Controllers\MensajeController;
+use Illuminate\Http\Request;
 
 // Importa las rutas de autenticación primero
 require __DIR__ . '/auth.php';
@@ -39,10 +45,57 @@ Route::get('/blog/{slug}', [BlogController::class, 'showArticulo'])->name('blog.
 Route::get('login/google', [GoogleController::class, 'redirectToGoogle'])->name('login.google');
 Route::get('login/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 
-Route::get('/dashboard', function () {
-    return redirect()->route('admin.paginas.index');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Rutas para usuarios con plan gratuito - Configuración inicial
+Route::middleware(['auth', FreePlanMiddleware::class])->group(function () {
+    Route::get('/admin/setup/welcome', [WelcomeController::class, 'showWelcome'])
+        ->name('admin.setup.welcome');
+    Route::get('/admin/setup/free-plan', [WelcomeController::class, 'showFreePlan'])
+        ->name('admin.setup.free-plan');
+    Route::get('/admin/setup/process-welcome', [WelcomeController::class, 'processWelcome'])
+        ->name('admin.setup.process-welcome');
+    Route::post('/admin/setup/complete', [WelcomeController::class, 'completeSetup'])
+        ->name('admin.setup.complete');
+});
 
+// Ruta del dashboard con redirección según el rol
+Route::get('/dashboard', function () {
+    $user = auth()->user();
+    
+    // Si es admin, redirigir a la sección de páginas
+    if ($user->isAdmin()) {
+        return redirect()->route('admin.paginas.index');
+    }
+    
+    // Si no es admin, mostrar el dashboard normal
+    return view('dashboard');
+})->middleware(['auth'])->name('dashboard');
+
+
+
+// Rutas para manejar el retorno después del pago
+Route::get('/payment/success', function (Request $request) {
+    // Aquí puedes manejar los pagos exitosos
+    // Los parámetros relevantes vendrán en $request->query()
+    $paymentId = $request->query('payment_id');
+    $status = $request->query('status');
+    $merchantOrderId = $request->query('merchant_order_id');
+    
+    // Puedes guardar esta información en tu base de datos
+    // y redirigir al usuario a una página de confirmación
+    
+    return view('payment.success', [
+        'payment_id' => $paymentId,
+        'status' => $status
+    ]);
+})->name('payment.success');
+
+Route::get('/payment/failure', function (Request $request) {
+    return view('payment.failure');
+})->name('payment.failure');
+
+Route::get('/payment/pending', function (Request $request) {
+    return view('payment.pending');
+})->name('payment.pending');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -113,6 +166,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::delete('/blog/{id}', [BlogController::class, 'destroy'])->name('blog.destroy');
     Route::post('/blog/settings', [BlogController::class, 'updateSettings'])->name('blog.settings.update');
     Route::post('/blog/upload-image', [BlogController::class, 'uploadImage'])->name('blog.upload-image');
+
+    // Gestión de usuarios
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::put('/users/{id}/update-role', [UserController::class, 'updateRole'])->name('users.update-role');
+    Route::delete('/users/{id}', [UserController::class, 'delete'])->name('users.delete');
 });
 
 // Ruta para mostrar páginas dinámicas - ESTA DEBE SER LA ÚLTIMA RUTA

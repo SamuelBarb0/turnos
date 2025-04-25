@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">]
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @include('components.seo-meta')
     <title>Agendux</title>
 
@@ -156,6 +157,10 @@
         @yield('content')
     </main>
 
+    
+        <!-- Al final de la sección, justo antes de cerrar el section: -->
+        <script src="https://sdk.mercadopago.com/js/v2"></script>
+
     <script>
         function toggleMenu() {
             const menu = document.getElementById('mobile-menu');
@@ -169,6 +174,66 @@
             closeIcon.classList.toggle('inline-flex');
         }
     </script>
+
+<script>
+    function pagarPlan(title, price) {
+        console.log('Iniciando pago:', title, price);
+        
+        // Obtener el token CSRF
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!csrfToken) {
+            alert('Error: No se encontró el token CSRF. Actualiza la página e intenta de nuevo.');
+            return;
+        }
+        
+        console.log('CSRF Token obtenido:', csrfToken);
+        
+        // Mostrar que estamos procesando
+        console.log('Procesando pago...');
+        
+        // Crear preferencia en el servidor
+        fetch('/mercadopago/preference', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify({
+                title: title,
+                price: price
+            })
+        })
+        .then(response => {
+            console.log('Respuesta recibida:', response.status);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('Error del servidor:', text);
+                    throw new Error('Error en la respuesta del servidor: ' + text);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos recibidos:', data);
+            
+            if (data.status === 'success') {
+                console.log('Redirigiendo a:', data.init_point);
+                // Redirigir al checkout de MercadoPago
+                window.location.href = data.init_point;
+            } else {
+                console.error('Error en la respuesta:', data.message);
+                alert('Hubo un error al procesar tu pago: ' + data.message);
+            }
+            
+            console.log('Proceso completado.');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Hubo un error al conectar con el servidor: ' + error.message);
+            console.log('Proceso completado.');
+        });
+    }
+</script>
 </body>
 
 </html>

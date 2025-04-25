@@ -698,9 +698,10 @@
                             </li>
                             @endforeach
                         </ul>
-                        <a href="{{ $plan['buttonUrl'] }}" class="block w-full py-3 px-6 text-center bg-[#3161DD] hover:bg-[#2651c0] text-white font-medium rounded-lg transition-colors">
-                            {{ $plan['buttonText'] }}
-                        </a>
+                        <button onclick="pagarPlan('{{ $plan['title'] }}', '{{ floatval(preg_replace('/[^0-9.]/', '', $plan['price'])) }}')" 
+                                class="block w-full py-3 px-6 text-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors">
+                                {{ $plan['buttonText'] }}
+                            </button>
                     </div>
                 </div>
                 @endforeach
@@ -840,4 +841,6 @@
         </div>
     </footer>
     @endif
+
+   
     @endsection

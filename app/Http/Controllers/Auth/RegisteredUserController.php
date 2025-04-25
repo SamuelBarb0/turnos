@@ -39,12 +39,15 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => User::ROLE_FREE, // Asignar rol free por defecto
+            'setup_completed' => false, // Usuario nuevo, necesita completar el setup
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        // Redirigir a la vista de bienvenida
+        return redirect()->route('admin.setup.welcome');
     }
 }

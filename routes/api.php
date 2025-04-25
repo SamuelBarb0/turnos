@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CitaController;
+use App\Http\Controllers\MercadoPagoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,3 +22,5 @@ Route::post('/webhook/whatsapp', [CitaController::class, 'procesarRespuesta']);
 Route::get('/webhook/test', function() {
     return response()->json(['status' => 'ok', 'message' => 'Webhook funcionando correctamente']);
 });
+// Rutas para MercadoPago
+Route::post('/mercadopago/preference', [MercadoPagoController::class, 'createPreference']);
