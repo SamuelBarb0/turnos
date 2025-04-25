@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\SeoMetadataController;
 use App\Http\Controllers\Admin\PaginaSeccionController;
 use App\Http\Controllers\Admin\ContenidoSeccionController;
+use App\Http\Controllers\Admin\PaymentController; // Nuevo controlador para pagos
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\FreePlanMiddleware;
 use App\Http\Controllers\MercadoPagoController;
@@ -70,32 +71,19 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth'])->name('dashboard');
 
+// Rutas para MercadoPago con middleware de autenticación
+Route::middleware('auth')->group(function () {
+    // Solo usuarios autenticados pueden crear preferencias de pago
+    Route::post('/mercadopago/preference', [MercadoPagoController::class, 'createPreference']);
+});
 
+// Las rutas de retorno pueden ser accesibles sin autenticación
+Route::get('/payment/success', [MercadoPagoController::class, 'paymentSuccess'])->name('payment.success');
+Route::get('/payment/failure', [MercadoPagoController::class, 'paymentFailure'])->name('payment.failure');
+Route::get('/payment/pending', [MercadoPagoController::class, 'paymentPending'])->name('payment.pending');
 
-// Rutas para manejar el retorno después del pago
-Route::get('/payment/success', function (Request $request) {
-    // Aquí puedes manejar los pagos exitosos
-    // Los parámetros relevantes vendrán en $request->query()
-    $paymentId = $request->query('payment_id');
-    $status = $request->query('status');
-    $merchantOrderId = $request->query('merchant_order_id');
-    
-    // Puedes guardar esta información en tu base de datos
-    // y redirigir al usuario a una página de confirmación
-    
-    return view('payment.success', [
-        'payment_id' => $paymentId,
-        'status' => $status
-    ]);
-})->name('payment.success');
-
-Route::get('/payment/failure', function (Request $request) {
-    return view('payment.failure');
-})->name('payment.failure');
-
-Route::get('/payment/pending', function (Request $request) {
-    return view('payment.pending');
-})->name('payment.pending');
+// El webhook debe ser público para que MercadoPago pueda enviar notificaciones
+Route::post('/api/mercadopago/webhook', [MercadoPagoController::class, 'webhook']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -171,6 +159,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::put('/users/{id}/update-role', [UserController::class, 'updateRole'])->name('users.update-role');
     Route::delete('/users/{id}', [UserController::class, 'delete'])->name('users.delete');
+    
+    // NUEVAS RUTAS - Administración de pagos
+    Route::get('/payments/dashboard', [PaymentController::class, 'dashboard'])->name('payments.dashboard');
+    Route::get('/payments/export', [PaymentController::class, 'export'])->name('payments.export');
+    Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/{id}', [PaymentController::class, 'show'])->name('payments.show');
 });
 
 // Ruta para mostrar páginas dinámicas - ESTA DEBE SER LA ÚLTIMA RUTA

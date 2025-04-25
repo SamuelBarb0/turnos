@@ -176,64 +176,64 @@
     </script>
 
 <script>
-    function pagarPlan(title, price) {
-        console.log('Iniciando pago:', title, price);
-        
-        // Obtener el token CSRF
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        if (!csrfToken) {
-            alert('Error: No se encontró el token CSRF. Actualiza la página e intenta de nuevo.');
-            return;
+        function mostrarAlertaAuth(index) {
+            // Mostrar la alerta
+            document.getElementById('auth-alert-' + index).classList.remove('hidden');
+            
+            // Mostrar el botón de login
+            document.getElementById('login-button-' + index).classList.remove('hidden');
         }
         
-        console.log('CSRF Token obtenido:', csrfToken);
-        
-        // Mostrar que estamos procesando
-        console.log('Procesando pago...');
-        
-        // Crear preferencia en el servidor
-        fetch('/api/mercadopago/preference', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: JSON.stringify({
-                title: title,
-                price: price
+        function pagarPlan(titulo, precio) {
+            // Mostrar indicador de carga
+            const loadingElement = document.createElement('div');
+            loadingElement.id = 'payment-loading';
+            loadingElement.innerHTML = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white p-6 rounded-lg shadow-xl max-w-md text-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+                        <p class="text-lg">Procesando tu solicitud...</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(loadingElement);
+            
+            // Enviar solicitud para crear preferencia de pago
+            fetch('/mercadopago/preference', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    title: titulo,
+                    price: precio,
+                    related_type: 'App\\Models\\User',
+                    related_id: {{ auth()->check() ? auth()->id() : 'null' }}
+                })
             })
-        })
-        .then(response => {
-            console.log('Respuesta recibida:', response.status);
-            if (!response.ok) {
-                return response.text().then(text => {
-                    console.error('Error del servidor:', text);
-                    throw new Error('Error en la respuesta del servidor: ' + text);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Datos recibidos:', data);
-            
-            if (data.status === 'success') {
-                console.log('Redirigiendo a:', data.init_point);
-                // Redirigir al checkout de MercadoPago
-                window.location.href = data.init_point;
-            } else {
-                console.error('Error en la respuesta:', data.message);
-                alert('Hubo un error al procesar tu pago: ' + data.message);
-            }
-            
-            console.log('Proceso completado.');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Hubo un error al conectar con el servidor: ' + error.message);
-            console.log('Proceso completado.');
-        });
-    }
-</script>
+            .then(response => response.json())
+            .then(data => {
+                // Quitar indicador de carga
+                document.getElementById('payment-loading').remove();
+                
+                if (data.status === 'success') {
+                    // Redirigir al checkout de MercadoPago
+                    window.location.href = data.init_point;
+                } else {
+                    // Mostrar error
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                // Quitar indicador de carga
+                document.getElementById('payment-loading').remove();
+                
+                console.error('Error:', error);
+                alert('Ocurrió un error al procesar tu solicitud');
+            });
+        }
+    </script>
 </body>
 
 </html>
