@@ -192,7 +192,7 @@
         console.log('Procesando pago...');
         
         // Crear preferencia en el servidor
-        fetch('/mercadopago/preference', {
+        fetch('/api/mercadopago/preference', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
