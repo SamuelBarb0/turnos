@@ -12,16 +12,17 @@ use Illuminate\Http\RedirectResponse;
 
 class GoogleController extends Controller
 {
-    /**
-     * Redirect the user to the Google authentication page.
-     */
     public function redirectToGoogle(): RedirectResponse
     {
         return Socialite::driver('google')
-        ->scopes(['openid', 'profile', 'email', 'https://www.googleapis.com/auth/calendar'])
-        ->redirect();
-
+            ->scopes(['openid', 'profile', 'email', 'https://www.googleapis.com/auth/calendar'])
+            ->with([
+                'access_type' => 'offline',
+                'prompt' => 'consent',
+            ])
+            ->redirect();
     }
+    
 
     public function handleGoogleCallback(): RedirectResponse
     {
@@ -38,7 +39,7 @@ class GoogleController extends Controller
                 $user->update([
                     'google_id' => $googleUser->id,
                     'google_token' => $googleUser->token,
-                    'google_refresh_token' => $googleUser->refreshToken,
+                    'google_refresh_token' => $googleUser->refreshToken ?? $user->google_refresh_token,
                     'token_expiration' => now()->addSeconds($googleUser->expiresIn),
                 ]);
     
