@@ -68,7 +68,7 @@ class DashboardController extends Controller
         
         $user->update($validated);
         
-        return redirect()->route('dashboard')
+        return redirect()->route('dashboard.index')
             ->with('success', 'Perfil actualizado correctamente');
     }
     
@@ -94,7 +94,7 @@ class DashboardController extends Controller
             'is_active' => 1,
         ]);
         
-        return redirect()->route('dashboard')
+        return redirect()->route('dashboard.index')
             ->with('success', 'Mensaje creado correctamente');
     }
     
@@ -122,7 +122,7 @@ class DashboardController extends Controller
             'tipo' => $validated['tipo'],
         ]);
         
-        return redirect()->route('dashboard')
+        return redirect()->route('dashboard.index')
             ->with('success', 'Mensaje actualizado correctamente');
     }
     
@@ -140,7 +140,7 @@ class DashboardController extends Controller
         // Instead of deleting, we set is_active to 0
         $mensaje->update(['is_active' => 0]);
         
-        return redirect()->route('dashboard')
+        return redirect()->route('dashboard.index')
             ->with('success', 'Mensaje eliminado correctamente');
     }
     

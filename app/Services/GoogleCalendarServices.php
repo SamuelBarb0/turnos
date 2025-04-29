@@ -36,6 +36,13 @@ class GoogleCalendarServices
 
     private function getValidToken($user)
     {
+        if (!$user->google_token) {
+            if ($user->isAdmin()) {
+                return null;
+            }
+            throw new Exception('El usuario no tiene un token de Google válido.');
+        }
+
         return $user->google_token;
     }
 
@@ -52,6 +59,10 @@ class GoogleCalendarServices
 
     public function createEvent($user, $titulo, $descripcion, $fechaInicio, $fechaFin, $colorId = 8)
     {
+        if ($user->isAdmin() && !$user->google_token) {
+            return null; // Ignorar sin error
+        }
+
         try {
             $token = $this->getValidToken($user);
 
@@ -103,6 +114,10 @@ class GoogleCalendarServices
 
     public function updateEvent($user, $eventId, $titulo, $descripcion, $fechaInicio, $fechaFin, $colorId = 8)
     {
+        if ($user->isAdmin() && !$user->google_token) {
+            return null;
+        }
+
         try {
             $token = $this->getValidToken($user);
 
@@ -154,6 +169,10 @@ class GoogleCalendarServices
 
     public function deleteEvent($user, $eventId)
     {
+        if ($user->isAdmin() && !$user->google_token) {
+            return true;
+        }
+
         try {
             $token = $this->getValidToken($user);
 

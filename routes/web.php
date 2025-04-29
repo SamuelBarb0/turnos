@@ -58,23 +58,21 @@ Route::middleware(['auth', FreePlanMiddleware::class])->group(function () {
         ->name('admin.setup.complete');
 });
 
-// NUEVO - Ruta del dashboard personalizado con redirección según el rol
 Route::get('/dashboard', function () {
     $user = auth()->user();
-    
-    // Si es admin, redirigir a la sección de páginas
+
     if ($user->isAdmin()) {
         return redirect()->route('admin.paginas.index');
     }
-    
-    // Si el usuario ha completado la configuración, mostrar el dashboard personalizado
+
     if ($user->setup_completed) {
         return app(DashboardController::class)->index();
     }
-    
-    // Si no ha completado la configuración, mostrar el dashboard normal
-    return view('dashboard');
+
+    // En vez de intentar mostrar 'dashboard', redirige seguro a su dashboard si no completó
+    return redirect()->route('admin.setup.welcome');
 })->middleware(['auth'])->name('dashboard');
+
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     

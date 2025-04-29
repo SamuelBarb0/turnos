@@ -142,7 +142,7 @@
                     <!-- Agregar más enlaces según sea necesario -->
                     @auth
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('dashboard') }}">Panel</a>
+                            <a class="nav-link" href="{{ route('dashboard.index') }}">Panel</a>
                         </li>
                     @else
                         <li class="nav-item">

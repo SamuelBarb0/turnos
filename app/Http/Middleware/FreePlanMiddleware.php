@@ -17,7 +17,7 @@ class FreePlanMiddleware
     {
         // Si el usuario no existe o no tiene rol free, redirigir
         if (!$request->user() || !$request->user()->isFree()) {
-            return redirect()->route('dashboard');
+            return redirect()->route('dashboard.index');
         }
 
         return $next($request);
