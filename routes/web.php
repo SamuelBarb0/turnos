@@ -10,16 +10,16 @@ use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\SeoMetadataController;
 use App\Http\Controllers\Admin\PaginaSeccionController;
 use App\Http\Controllers\Admin\ContenidoSeccionController;
-use App\Http\Controllers\Admin\PaymentController; // Nuevo controlador para pagos
+use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\DashboardController; // Nuevo controlador para el dashboard personalizado
+use App\Http\Controllers\MercadoPagoController;
+use App\Http\Controllers\MensajeController; 
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\FreePlanMiddleware;
-use App\Http\Controllers\MercadoPagoController;
-use App\Http\Controllers\MensajeController;
 use Illuminate\Http\Request;
 
 // Importa las rutas de autenticación primero
 require __DIR__ . '/auth.php';
-
 
 Route::get('/', function () {
     $pagina = \App\Models\Pagina::where('slug', 'inicio')->orWhere('slug', '')->first();
@@ -58,7 +58,7 @@ Route::middleware(['auth', FreePlanMiddleware::class])->group(function () {
         ->name('admin.setup.complete');
 });
 
-// Ruta del dashboard con redirección según el rol
+// NUEVO - Ruta del dashboard personalizado con redirección según el rol
 Route::get('/dashboard', function () {
     $user = auth()->user();
     
@@ -67,9 +67,51 @@ Route::get('/dashboard', function () {
         return redirect()->route('admin.paginas.index');
     }
     
-    // Si no es admin, mostrar el dashboard normal
+    // Si el usuario ha completado la configuración, mostrar el dashboard personalizado
+    if ($user->setup_completed) {
+        return app(DashboardController::class)->index();
+    }
+    
+    // Si no ha completado la configuración, mostrar el dashboard normal
     return view('dashboard');
 })->middleware(['auth'])->name('dashboard');
+
+Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+    
+    // CRUD de mensajes
+    Route::resource('mensajes', MensajeController::class)
+        ->except(['show']); // No necesitas "show" si no estás viendo un solo mensaje
+
+});
+
+// Grupo de rutas del dashboard (usuarios normales) 
+Route::middleware('auth')->prefix('dashboard')->name('dashboard.')->group(function () {
+    
+    // Dashboard principal (Perfil + Resumen)
+    Route::get('/', [DashboardController::class, 'index'])->name('index');
+
+    // Perfil de usuario (Actualizar)
+    Route::put('/profile', [DashboardController::class, 'updateProfile'])->name('profile.update');
+
+    // ========== Plantillas de Mensajes ==========
+    Route::prefix('mensajes')->name('mensajes.')->group(function () {
+        Route::get('/', [MensajeController::class, 'index'])->name('index'); // Listar mensajes
+        Route::get('/create', [MensajeController::class, 'create'])->name('create'); // Formulario crear
+        Route::post('/', [MensajeController::class, 'store'])->name('store'); // Guardar nuevo mensaje
+        Route::get('/{mensaje}/edit', [MensajeController::class, 'edit'])->name('edit'); // Editar mensaje
+        Route::put('/{mensaje}', [MensajeController::class, 'update'])->name('update'); // Actualizar mensaje
+        Route::delete('/{mensaje}', [MensajeController::class, 'destroy'])->name('destroy'); // Eliminar mensaje
+    });
+
+    // ========== Citas ==========
+    Route::prefix('citas')->name('citas.')->group(function () {
+        Route::get('/', [CitaController::class, 'index'])->name('index'); // Listar citas
+        Route::get('/{cita}', [CitaController::class, 'show'])->name('show'); // Ver cita
+        Route::post('/{cita}/confirm', [DashboardController::class, 'confirmCita'])->name('confirm'); // Confirmar cita (AJAX)
+        Route::post('/{cita}/cancel', [DashboardController::class, 'cancelCita'])->name('cancel'); // Cancelar cita (AJAX)
+        Route::post('/{cita}/send-reminder', [DashboardController::class, 'sendReminderMessage'])->name('reminder'); // Enviar recordatorio (AJAX)
+    });
+});
 
 // Rutas para MercadoPago con middleware de autenticación
 Route::middleware('auth')->group(function () {
@@ -160,7 +202,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::put('/users/{id}/update-role', [UserController::class, 'updateRole'])->name('users.update-role');
     Route::delete('/users/{id}', [UserController::class, 'delete'])->name('users.delete');
     
-    // NUEVAS RUTAS - Administración de pagos
+    // Administración de pagos
     Route::get('/payments/dashboard', [PaymentController::class, 'dashboard'])->name('payments.dashboard');
     Route::get('/payments/export', [PaymentController::class, 'export'])->name('payments.export');
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');

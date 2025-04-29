@@ -49,6 +49,6 @@ class WelcomeController extends Controller
         $user->save();
         
         // Redirigir al dashboard
-        return redirect()->route('dashboard');
+        return redirect()->route('dashboard.index');
     }
 }

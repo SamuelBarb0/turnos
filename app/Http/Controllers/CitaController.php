@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cita;
+use App\Services\GoogleCalendarServices; // arriba
 use Illuminate\Http\Request;
 use Spatie\GoogleCalendar\Event;
 use Carbon\Carbon;
@@ -16,9 +17,32 @@ class CitaController extends Controller
      */
     public function index()
     {
-        $citas = Cita::orderBy('fecha_de_la_cita', 'asc')->get();
-        return view('citas.index', compact('citas'));
+        $user = auth()->user();
+
+        if ($user->isAdmin()) {
+            // Admin ve todas
+            $citas = Cita::orderBy('fecha_de_la_cita', 'asc')->get();
+            $esMisCitas = false;
+        } else {
+            // Usuario normal solo sus citas
+            $citas = Cita::where('user_id', $user->id)
+                ->orderBy('fecha_de_la_cita', 'asc')
+                ->get();
+            $esMisCitas = true;
+        }
+
+        return view('citas.index', compact('citas', 'esMisCitas'));
     }
+
+    private function authorizeAccess(Cita $cita)
+    {
+        $user = auth()->user();
+
+        if (!$user->isAdmin() && $cita->user_id !== $user->id) {
+            abort(403, 'No tienes permiso para acceder a esta cita.');
+        }
+    }
+
 
     /**
      * Mostrar formulario para crear nueva cita.
@@ -28,55 +52,56 @@ class CitaController extends Controller
         return view('citas.create');
     }
 
-    /**
-     * Guardar una nueva cita.
-     */
-    public function store(Request $request)
+
+
+    public function store(Request $request, GoogleCalendarServices $calendarService)
     {
-        // Validar entrada
         $validated = $request->validate([
             'titulo' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'fecha_de_la_cita' => 'required|date',
             'recordatorios' => 'nullable|array',
         ]);
-
-        // Preparar datos
+    
         $fechaSolicitud = Carbon::now();
         $fechaCita = Carbon::parse($validated['fecha_de_la_cita']);
+        $fechaFin = $fechaCita->copy()->addHour();
+    
         $estado = 'pendiente';
-        $colorEstado = '#6c757d'; // Gris para pendiente
-
-        // Crear evento en Google Calendar
-        $event = new Event;
-        $event->name = $validated['titulo'];
-        $event->description = $validated['descripcion'] ?? '';
-        $event->startDateTime = $fechaCita;
-        $event->endDateTime = $fechaCita->copy()->addHour();
-        
-        // Establecer color según estado
-        $event->colorId = 8; // Gris en Google Calendar para "pendiente"
-
-        // Guardar en Google Calendar
-        $createdEvent = $event->save();
-
-        // Crear cita en nuestra base de datos
+        $colorEstado = '#6c757d'; // gris para pendiente
+    
+        $user = auth()->user();
+    
+        // Crear evento en Google Calendar (usando color ID 8 = gris)
+        $evento = $calendarService->createEvent(
+            $user,
+            $validated['titulo'],
+            $validated['descripcion'] ?? '',
+            $fechaCita,
+            $fechaFin,
+            8 // colorId de Google Calendar para gris
+        );
+    
+        // Guardar cita en BD
         $cita = Cita::create([
             'titulo' => $validated['titulo'],
             'descripcion' => $validated['descripcion'] ?? null,
             'fecha_solicitud' => $fechaSolicitud,
             'fecha_de_la_cita' => $fechaCita,
-            'google_event_id' => $createdEvent->id,
+            'google_event_id' => $evento['id'] ?? null,
             'recordatorios' => $validated['recordatorios'] ?? null,
             'estado' => $estado,
             'color_estado' => $colorEstado,
             'mensaje_enviado' => false,
-            'respuesta_cliente' => null
+            'respuesta_cliente' => null,
+            'user_id' => $user->id,
         ]);
-
+    
         return redirect()->route('citas.preparar.mensaje', $cita->id_cita)
             ->with('success', 'Cita creada. Ahora prepara el mensaje para el cliente.');
     }
+
+
 
     /**
      * Mostrar formulario para preparar mensaje de WhatsApp.
@@ -85,7 +110,7 @@ class CitaController extends Controller
     {
         // Plantilla predeterminada del mensaje
         $mensajePredeterminado = "Hola, te confirmo tu cita para el {$cita->fecha_de_la_cita->format('d/m/Y')} a las {$cita->fecha_de_la_cita->format('H:i')}. Por favor, responde 'Confirmar' para aceptar o 'Cancelar' si necesitas reprogramar. Gracias.";
-        
+
         return view('citas.mensaje', compact('cita', 'mensajePredeterminado'));
     }
 
@@ -96,17 +121,17 @@ class CitaController extends Controller
             'mensaje'  => 'required|string',
             'telefono' => 'required|string',
         ]);
-        
+
         // Guardar el teléfono en la cita
         $cita->telefono = $validated['telefono'];
-        
+
         // Preparar el número: agregar el prefijo "57" si no lo tiene y limpiar caracteres que no sean numéricos
         $telefono = $validated['telefono'];
         if (!preg_match('/^57/', $telefono)) {
             $telefono = '57' . $telefono;
         }
         $telefono = preg_replace('/[^0-9]/', '', $telefono);
-        
+
         // Definir los botones interactivos que se enviarán (por ejemplo, "Confirmar" y "Cancelar")
         $buttons = [
             [
@@ -118,21 +143,21 @@ class CitaController extends Controller
                 'text' => 'Cancelar'
             ]
         ];
-        
+
         // Enviar el mensaje utilizando el servicio de Twilio
         $resultado = $twilioService->enviarMensajeConBotones(
             $telefono,
             $validated['mensaje'],
             $buttons
         );
-        
+
         if ($resultado['success']) {
             // Actualizar el estado de la cita a "mensaje_enviado" y marcar que el mensaje se ha enviado
             $cita->estado = 'mensaje_enviado';
             $cita->color_estado = $cita->getColorEstado();
             $cita->mensaje_enviado = true;
             $cita->save();
-            
+
             // Actualizar el evento en Google Calendar: por ejemplo, cambiar el color a amarillo (ID = 5)
             try {
                 $event = Event::find($cita->google_event_id);
@@ -143,7 +168,7 @@ class CitaController extends Controller
             } catch (\Exception $e) {
                 \Log::error('Error al actualizar evento en Google Calendar: ' . $e->getMessage());
             }
-            
+
             return redirect()->route('citas.index')
                 ->with('success', 'Mensaje enviado. Esperando respuesta del cliente.');
         } else {
@@ -152,35 +177,35 @@ class CitaController extends Controller
                 ->withInput();
         }
     }
-    
+
 
     public function procesarRespuesta(Request $request)
     {
         \Log::info('Webhook recibido: ' . json_encode($request->all()));
-        
+
         $data = $request->all();
         $telefono = null;
         $respuesta = null;
-        
+
         // Extraer teléfono y respuesta
         if (isset($data['From'])) {
             // Formato WhatsApp/Twilio estándar
             $telefonoCompleto = $data['From'];
             $telefono = str_replace(['whatsapp:', '+'], '', $telefonoCompleto);
-            
+
             // Extraer los últimos 10 dígitos si tiene prefijo 57
             if (substr($telefono, 0, 2) === '57') {
                 $telefonoSinPrefijo = substr($telefono, 2);
             } else {
                 $telefonoSinPrefijo = $telefono;
             }
-            
+
             \Log::info("Teléfono extraído: {$telefonoSinPrefijo} (original: {$telefonoCompleto})");
-            
+
             if (isset($data['Body'])) {
                 $respuestaTexto = strtolower(trim($data['Body']));
                 \Log::info("Respuesta recibida: {$respuestaTexto}");
-                
+
                 if ($respuestaTexto == 'confirmar') {
                     $respuesta = 'confirmar_button';
                 } elseif ($respuestaTexto == 'cancelar') {
@@ -194,36 +219,36 @@ class CitaController extends Controller
             $telefono = $data['body']['user']['phone'];
             // Extraer solo los últimos 10 dígitos si es necesario
             $telefonoSinPrefijo = (strlen($telefono) > 10) ? substr($telefono, -10) : $telefono;
-            
+
             if (isset($data['body']['message']['interactive']['button_reply'])) {
                 $respuesta = $data['body']['message']['interactive']['button_reply']['id'];
             }
         }
-        
+
         if (!$telefonoSinPrefijo || !$respuesta) {
             \Log::warning('Formato de mensaje no válido o información faltante');
             return response()->json(['status' => 'error', 'message' => 'Formato de mensaje no válido']);
         }
-        
+
         // Buscar la cita con el número sin prefijo
         $cita = Cita::where('telefono', $telefonoSinPrefijo)
             ->where('mensaje_enviado', true)
             ->whereIn('estado', ['mensaje_enviado', 'pendiente'])
             ->orderBy('id_cita', 'desc')
             ->first();
-        
+
         if (!$cita) {
             \Log::warning('Cita no encontrada para el teléfono: ' . $telefonoSinPrefijo);
             return response()->json(['status' => 'error', 'message' => 'Cita no encontrada']);
         }
-        
+
         \Log::info("Cita encontrada: ID {$cita->id_cita}");
-        
+
         if ($respuesta === 'confirmar_button') {
             \Log::info("Confirmando cita: {$cita->id_cita}");
             $cita->estado = 'confirmada';
             $cita->color_estado = $cita->getColorEstado();
-            
+
             try {
                 $event = Event::find($cita->google_event_id);
                 if ($event) {
@@ -237,7 +262,7 @@ class CitaController extends Controller
             \Log::info("Cancelando cita: {$cita->id_cita}");
             $cita->estado = 'cancelada';
             $cita->color_estado = $cita->getColorEstado();
-            
+
             try {
                 $event = Event::find($cita->google_event_id);
                 if ($event) {
@@ -248,38 +273,30 @@ class CitaController extends Controller
                 \Log::error('Error al actualizar evento en Google Calendar: ' . $e->getMessage());
             }
         }
-        
+
         $cita->respuesta_cliente = $respuesta;
         $cita->save();
         \Log::info("Cita actualizada. Nuevo estado: {$cita->estado}");
-        
+
         return response()->json(['status' => 'success', 'message' => 'Respuesta procesada']);
     }
-
-
-
-    /**
-     * Mostrar detalles de una cita.
-     */
+    
     public function show(Cita $cita)
     {
+        $this->authorizeAccess($cita);
         return view('citas.show', compact('cita'));
     }
 
-    /**
-     * Mostrar formulario para editar una cita.
-     */
     public function edit(Cita $cita)
     {
+        $this->authorizeAccess($cita);
         return view('citas.edit', compact('cita'));
     }
 
-    /**
-     * Actualizar una cita existente.
-     */
-    public function update(Request $request, Cita $cita)
+    public function update(Request $request, Cita $cita, GoogleCalendarServices $calendarService)
     {
-        // Validar entrada
+        $this->authorizeAccess($cita);
+
         $validated = $request->validate([
             'titulo' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
@@ -289,36 +306,31 @@ class CitaController extends Controller
         ]);
 
         $fechaCita = Carbon::parse($validated['fecha_de_la_cita']);
-        $estadoAnterior = $cita->estado;
+        $fechaFin = $fechaCita->copy()->addHour();
         $nuevoEstado = $validated['estado'];
 
-        // Actualizar color según el estado
-        $colorId = 8; // Por defecto gris (pendiente)
-        
-        if ($nuevoEstado === 'mensaje_enviado') {
-            $colorId = 5; // Amarillo
-        } else if ($nuevoEstado === 'confirmada') {
-            $colorId = 10; // Verde
-        } else if ($nuevoEstado === 'cancelada') {
-            $colorId = 11; // Rojo
-        }
+        // Color para estado
+        $colorId = match($nuevoEstado) {
+            'mensaje_enviado' => 5, // Amarillo
+            'confirmada' => 10,      // Verde
+            'cancelada' => 11,       // Rojo
+            default => 8             // Gris
+        };
 
-        // Actualizar en Google Calendar
+        $user = auth()->user();
+
         if ($cita->google_event_id) {
-            try {
-                $event = Event::find($cita->google_event_id);
-                $event->name = $validated['titulo'];
-                $event->description = $validated['descripcion'] ?? '';
-                $event->startDateTime = $fechaCita;
-                $event->endDateTime = $fechaCita->copy()->addHour();
-                $event->colorId = $colorId;
-                $event->save();
-            } catch (\Exception $e) {
-                // Manejar error si el evento no existe en Google Calendar
-            }
+            $calendarService->updateEvent(
+                $user,
+                $cita->google_event_id,
+                $validated['titulo'],
+                $validated['descripcion'] ?? '',
+                $fechaCita,
+                $fechaFin,
+                $colorId
+            );
         }
 
-        // Actualizar en base de datos
         $cita->update([
             'titulo' => $validated['titulo'],
             'descripcion' => $validated['descripcion'] ?? $cita->descripcion,
@@ -329,36 +341,24 @@ class CitaController extends Controller
             'color_estado' => $cita->getColorEstado()
         ]);
 
-        // Si el estado cambió a "mensaje enviado" y no se ha enviado mensaje aún
-        if ($estadoAnterior !== 'mensaje_enviado' && $nuevoEstado === 'mensaje_enviado' && !$cita->mensaje_enviado) {
-            return redirect()->route('citas.preparar.mensaje', $cita->id_cita);
-        }
-
-        return redirect()->route('citas.index')
-            ->with('success', 'Cita actualizada correctamente');
+        return redirect()->route('citas.index')->with('success', 'Cita actualizada correctamente.');
     }
 
-    /**
-     * Eliminar una cita.
-     */
-    public function destroy(Cita $cita)
+    public function destroy(Cita $cita, GoogleCalendarServices $calendarService)
     {
-        // Eliminar de Google Calendar
+        $this->authorizeAccess($cita);
+
+        $user = auth()->user();
+
         if ($cita->google_event_id) {
-            try {
-                $event = Event::find($cita->google_event_id);
-                $event->delete();
-            } catch (\Exception $e) {
-                // Manejar error si el evento no existe en Google Calendar
-            }
+            $calendarService->deleteEvent($user, $cita->google_event_id);
         }
 
-        // Eliminar de base de datos
         $cita->delete();
 
-        return redirect()->route('citas.index')
-            ->with('success', 'Cita eliminada correctamente');
+        return redirect()->route('citas.index')->with('success', 'Cita eliminada correctamente.');
     }
+
 
     /**
      * Sincronizar eventos desde Google Calendar.

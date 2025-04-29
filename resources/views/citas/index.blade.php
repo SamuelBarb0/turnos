@@ -13,7 +13,7 @@
     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-6 text-gray-900 dark:text-gray-100">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">Lista de Citas</h2>
+                <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{{ $esMisCitas ? 'Mis Citas' : 'Todas las Citas' }}</h2>
                 <div class="flex space-x-2">
                     <a href="{{ route('citas.create') }}" class="inline-flex items-center px-4 py-2 bg-[#3161DD] border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-[#2050C0] focus:bg-[#2050C0] active:bg-[#1040A0] focus:outline-none focus:ring-2 focus:ring-[#3161DD] focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

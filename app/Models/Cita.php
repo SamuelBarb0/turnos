@@ -40,6 +40,7 @@ class Cita extends Model
         'color_estado',
         'mensaje_enviado',
         'respuesta_cliente',
+        'user_id', // <<< AGREGAR ESTO
     ];
 
     /**
@@ -86,5 +87,11 @@ class Cita extends Model
         $this->estado = $estado;
         $this->color_estado = $this->getColorEstado();
         $this->save();
+    }
+
+
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class);
     }
 }

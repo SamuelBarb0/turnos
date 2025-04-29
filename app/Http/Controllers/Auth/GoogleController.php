@@ -17,13 +17,16 @@ class GoogleController extends Controller
      */
     public function redirectToGoogle(): RedirectResponse
     {
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')
+        ->scopes(['openid', 'profile', 'email', 'https://www.googleapis.com/auth/calendar'])
+        ->redirect();
+
     }
 
     public function handleGoogleCallback(): RedirectResponse
     {
         try {
-            $googleUser = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')->stateless()->user();
             
             // Buscar usuario por email o google_id
             $user = User::where('google_id', $googleUser->id)
@@ -31,25 +34,24 @@ class GoogleController extends Controller
                         ->first();
             
             if ($user) {
-                // Si el usuario existe pero no tiene google_id, actualizarlo
-                if (!$user->google_id) {
-                    $user->google_id = $googleUser->id;
-                    $user->save();
-                }
-                
+                // Actualizar tokens si ya existe
+                $user->update([
+                    'google_id' => $googleUser->id,
+                    'google_token' => $googleUser->token,
+                    'google_refresh_token' => $googleUser->refreshToken,
+                    'token_expiration' => now()->addSeconds($googleUser->expiresIn),
+                ]);
+    
                 Auth::login($user);
-                
-                // Si el usuario ya completó el setup, ir al dashboard
+    
                 if ($user->setup_completed) {
                     return redirect()->intended('/dashboard');
                 }
-                
-                // Si no ha completado el setup y es un usuario free, ir a la bienvenida
+    
                 if ($user->isFree()) {
                     return redirect()->route('admin.setup.welcome');
                 }
-                
-                // Si no es free, ir al dashboard
+    
                 return redirect()->intended('/dashboard');
             } else {
                 // Crear nuevo usuario
@@ -57,18 +59,21 @@ class GoogleController extends Controller
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
                     'google_id' => $googleUser->id,
+                    'google_token' => $googleUser->token,
+                    'google_refresh_token' => $googleUser->refreshToken,
+                    'token_expiration' => now()->addSeconds($googleUser->expiresIn),
                     'password' => bcrypt(rand(1, 10000)),
-                    'role' => User::ROLE_FREE, // Asignar rol free por defecto
-                    'setup_completed' => false, // Usuario nuevo, necesita completar el setup
+                    'role' => User::ROLE_FREE,
+                    'setup_completed' => false,
                 ]);
-                
+    
                 Auth::login($newUser);
-                
-                // Redirigir a la bienvenida
+    
                 return redirect()->route('admin.setup.welcome');
             }
         } catch (Exception $e) {
             return redirect('login')->with('error', 'Ha ocurrido un error al iniciar sesión con Google: ' . $e->getMessage());
         }
     }
+    
 }

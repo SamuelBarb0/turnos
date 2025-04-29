@@ -9,20 +9,27 @@ use Illuminate\Support\Facades\Auth;
 class MensajeController extends Controller
 {
     /**
-     * Muestra la lista de mensajes del usuario autenticado.
-     *
-     * @return \Illuminate\View\View
+     * Muestra la lista de mensajes.
      */
     public function index()
     {
-        $mensajes = Mensaje::where('user_id', Auth::id())->get();
-        return view('admin.mensajes.index', compact('mensajes'));
+        $user = Auth::user();
+    
+        if ($user->isAdmin()) {
+            $mensajes = Mensaje::orderBy('created_at', 'desc')->get();
+            $esMisMensajes = false;
+        } else {
+            $mensajes = Mensaje::where('user_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+            $esMisMensajes = true;
+        }
+    
+        return view('admin.mensajes.index', compact('mensajes', 'esMisMensajes'));
     }
 
     /**
-     * Muestra el formulario para crear un nuevo mensaje.
-     *
-     * @return \Illuminate\View\View
+     * Mostrar formulario para crear un nuevo mensaje.
      */
     public function create()
     {
@@ -31,9 +38,6 @@ class MensajeController extends Controller
 
     /**
      * Almacena un nuevo mensaje en la base de datos.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(Request $request)
     {
@@ -49,33 +53,28 @@ class MensajeController extends Controller
             'tipo' => $request->template ?: 'personalizado',
         ]);
 
-        // Verificar si estamos en el flujo de configuración
+        // Verificar si estamos en flujo de configuración
         if ($request->has('setup_flow') && $request->setup_flow) {
             return redirect()->route('admin.setup.complete');
         }
 
-        return redirect()->route('mensajes.index')
+        return redirect()->route('admin.mensajes.index')
             ->with('success', 'Mensaje creado correctamente.');
     }
 
     /**
-     * Muestra el formulario para editar un mensaje existente.
-     *
-     * @param  int  $id
-     * @return \Illuminate\View\View
+     * Muestra formulario para editar un mensaje.
      */
     public function edit($id)
     {
-        $mensaje = Mensaje::where('user_id', Auth::id())->findOrFail($id);
+        $mensaje = Mensaje::findOrFail($id);
+        $this->authorizeAccess($mensaje);
+
         return view('admin.mensajes.edit', compact('mensaje'));
     }
 
     /**
-     * Actualiza un mensaje específico en la base de datos.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
+     * Actualiza un mensaje existente.
      */
     public function update(Request $request, $id)
     {
@@ -84,30 +83,42 @@ class MensajeController extends Controller
             'body' => 'required|max:900',
         ]);
 
-        $mensaje = Mensaje::where('user_id', Auth::id())->findOrFail($id);
-        
+        $mensaje = Mensaje::findOrFail($id);
+        $this->authorizeAccess($mensaje);
+
         $mensaje->update([
             'title' => $request->title,
             'body' => $request->body,
             'tipo' => $request->template ?: $mensaje->tipo,
         ]);
 
-        return redirect()->route('mensajes.index')
+        return redirect()->route('admin.mensajes.index')
             ->with('success', 'Mensaje actualizado correctamente.');
     }
 
     /**
-     * Elimina un mensaje específico de la base de datos.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
+     * Elimina un mensaje existente.
      */
     public function destroy($id)
     {
-        $mensaje = Mensaje::where('user_id', Auth::id())->findOrFail($id);
+        $mensaje = Mensaje::findOrFail($id);
+        $this->authorizeAccess($mensaje);
+
         $mensaje->delete();
 
-        return redirect()->route('mensajes.index')
+        return redirect()->route('admin.mensajes.index')
             ->with('success', 'Mensaje eliminado correctamente.');
+    }
+
+    /**
+     * Autorizar acceso a un mensaje (admin puede todo, usuario solo su propio mensaje).
+     */
+    private function authorizeAccess(Mensaje $mensaje)
+    {
+        $user = Auth::user();
+
+        if (!$user->isAdmin() && $mensaje->user_id !== $user->id) {
+            abort(403, 'No tienes permiso para acceder a este mensaje.');
+        }
     }
 }

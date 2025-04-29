@@ -24,6 +24,9 @@ class User extends Authenticatable
         'google_id',
         'role', // Cambiado de role_id a role
         'setup_completed',
+        'google_token',
+        'google_refresh_token',
+        'token_expiration',
     ];
 
     /**
