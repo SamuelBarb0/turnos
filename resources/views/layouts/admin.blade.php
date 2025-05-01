@@ -10,6 +10,8 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link rel="icon" type="image/jpeg" href="{{ asset('img/favicon.jpg') }}">
+
 
     <!-- Styles / Scripts -->
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
@@ -95,24 +97,54 @@
                 <!-- Authentication Links (right side) -->
                 <div class="hidden sm:flex sm:items-center sm:ml-6">
                     @if (Route::has('login'))
-                    <div class="flex items-center">
+                    <div class="flex items-center space-x-4">
                         @auth
-                        <a href="{{ url('/dashboard') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3161DD] focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150">
+                        @php
+                        $user = Auth::user();
+                        $plan = match($user->role ?? null) {
+                        9 => 'admin',
+                        1 => 'free',
+                        default => 'desconocido',
+                        };
+
+                        $planUrl = $plan === 'free' ? url('/#precios') : null;
+                        @endphp
+
+                        <div class="text-sm text-gray-600 dark:text-gray-300">
+                            Tu plan es:
+                            @if ($plan === 'free')
+                            <a href="{{ $planUrl }}" class="font-semibold text-blue-600 hover:underline">
+                                FREE
+                            </a>
+                            <span class="ml-2 text-xs text-red-600">
+                                <a href="{{ $planUrl }}" class="hover:underline">Actualiza tu plan</a>
+                            </span>
+                            @else
+                            <strong class="uppercase">{{ $plan }}</strong>
+                            @endif
+                        </div>
+
+                        <a href="{{ url('/dashboard') }}"
+                            class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3161DD] focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150">
                             Dashboard
                         </a>
-                        <form method="POST" action="{{ route('logout') }}" class="ml-3">
+
+                        <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 Cerrar sesión
                             </button>
                         </form>
                         @else
-                        <a href="{{ route('login') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3161DD] focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150">
+                        <a href="{{ route('login') }}"
+                            class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3161DD] focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150">
                             Iniciar sesión
                         </a>
 
                         @if (Route::has('register'))
-                        <a href="{{ route('register') }}" class="ml-3 inline-flex items-center px-4 py-2 bg-[#3161DD] border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-[#2050C0] focus:bg-[#2050C0] active:bg-[#1040A0] focus:outline-none focus:ring-2 focus:ring-[#3161DD] focus:ring-offset-2 transition ease-in-out duration-150">
+                        <a href="{{ route('register') }}"
+                            class="ml-3 inline-flex items-center px-4 py-2 bg-[#3161DD] border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-[#2050C0] focus:bg-[#2050C0] active:bg-[#1040A0] focus:outline-none focus:ring-2 focus:ring-[#3161DD] focus:ring-offset-2 transition ease-in-out duration-150">
                             Registrarse
                         </a>
                         @endif
@@ -120,6 +152,8 @@
                     </div>
                     @endif
                 </div>
+
+
 
                 <!-- Hamburger -->
                 <div class="-mr-2 flex items-center sm:hidden">
