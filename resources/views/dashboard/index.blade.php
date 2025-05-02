@@ -67,7 +67,7 @@
                 <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700" id="showTemplateForm">+ Nueva Plantilla</button>
 
                 <div id="templateForm" class="hidden bg-gray-50 rounded-lg p-4 space-y-4">
-                    <form action="{{ route('dashboard.mensajes.store') }}" method="POST">
+                    <form action="{{ route('dashboard.mensajes.show') }}" method="POST">
                         @csrf
                         <input type="hidden" name="_method" id="formMethod" value="POST">
                         <input type="hidden" name="mensaje_id" id="mensaje_id" value="">
