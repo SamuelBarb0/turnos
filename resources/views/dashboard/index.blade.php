@@ -60,66 +60,20 @@
                 </form>
             </section>
 
-            <!-- Plantillas de Mensajes -->
+            <!-- Crear Nueva Plantilla (Redirección) -->
             <section class="bg-white rounded-2xl shadow p-6 space-y-6">
-                <h2 class="text-2xl font-semibold text-gray-800">Mensajes</h2>
+                <h2 class="text-2xl font-semibold text-gray-800">Crear Plantilla</h2>
 
-                <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700" id="showTemplateForm">+ Nueva Plantilla</button>
+                <p class="text-gray-500">Puedes crear una nueva plantilla personalizada para tus mensajes.</p>
 
-                <div id="templateForm" class="hidden bg-gray-50 rounded-lg p-4 space-y-4">
-                    <form action="{{ route('dashboard.mensajes.index') }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="_method" id="formMethod" value="POST">
-                        <input type="hidden" name="mensaje_id" id="mensaje_id" value="">
-
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm text-gray-600 mb-2">Título</label>
-                                <input type="text" name="title" id="title" class="w-full rounded-lg border-gray-300 focus:ring-blue-500">
-                            </div>
-
-                            <div>
-                                <label class="block text-sm text-gray-600 mb-2">Contenido</label>
-                                <textarea name="body" id="body" rows="3" class="w-full rounded-lg border-gray-300 focus:ring-blue-500"></textarea>
-                                <p class="text-xs text-gray-400 mt-1">Puedes usar {nombre}, {fecha}, {hora} como variables.</p>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm text-gray-600 mb-2">Tipo</label>
-                                <select name="tipo" id="tipo" class="w-full rounded-lg border-gray-300 focus:ring-blue-500">
-                                    <option value="confirmacion">Confirmación</option>
-                                    <option value="recordatorio">Recordatorio</option>
-                                    <option value="cancelacion">Cancelación</option>
-                                    <option value="personalizado">Personalizado</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-end space-x-2">
-                            <button type="button" id="cancelTemplate" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg">Cancelar</button>
-                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Guardar</button>
-                        </div>
-                    </form>
-                </div>
-
-                @forelse($mensajes ?? [] as $mensaje)
-                    <div class="py-4 border-b last:border-0 flex justify-between items-center">
-                        <div>
-                            <p class="font-semibold">{{ $mensaje->title }}</p>
-                            <p class="text-xs text-gray-500">{{ ucfirst($mensaje->tipo) }}</p>
-                        </div>
-                        <div class="space-x-3">
-                            <button onclick="editMensaje({{ $mensaje->id }})" class="text-blue-600 hover:underline">Editar</button>
-                            <form action="{{ route('admin.mensajes.destroy', $mensaje->id) }}" method="POST" class="inline">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:underline">Eliminar</button>
-                            </form>
-                        </div>
-                    </div>
-                @empty
-                    <p class="text-gray-500">No hay plantillas aún.</p>
-                @endforelse
+                <form action="{{ route('dashboard.mensajes.index') }}" method="GET" class="flex justify-end">
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                        Ir a Crear Plantilla
+                    </button>
+                </form>
             </section>
+
+
 
             <!-- Calendario de Citas -->
             <section class="bg-white rounded-2xl shadow p-6 space-y-6">
