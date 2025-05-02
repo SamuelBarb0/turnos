@@ -1,4 +1,3 @@
-<!-- resources/views/citas/create.blade.php -->
 @extends('layouts.admin')
 
 @section('content')
@@ -23,7 +22,7 @@
                         <label for="titulo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título</label>
                         <input type="text" name="titulo" id="titulo" value="{{ old('titulo') }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md @error('titulo') border-red-500 @enderror" required>
                         @error('titulo')
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
 
@@ -31,16 +30,30 @@
                         <label for="fecha_de_la_cita" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha y Hora de la Cita</label>
                         <input type="datetime-local" name="fecha_de_la_cita" id="fecha_de_la_cita" value="{{ old('fecha_de_la_cita') }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md @error('fecha_de_la_cita') border-red-500 @enderror" required>
                         @error('fecha_de_la_cita')
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
                     </div>
+                </div>
+
+                <div class="mb-6">
+                    <label for="timezone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zona Horaria</label>
+                    <select name="timezone" id="timezone" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md @error('timezone') border-red-500 @enderror" required>
+                        @foreach(config('timezones') as $tz => $label)
+                        <option value="{{ $tz }}" {{ old('timezone', $cita->timezone ?? 'America/Bogota') == $tz ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                        @endforeach
+                    </select>
+                    @error('timezone')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div class="mb-6">
                     <label for="descripcion" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
                     <textarea name="descripcion" id="descripcion" rows="4" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md @error('descripcion') border-red-500 @enderror">{{ old('descripcion') }}</textarea>
                     @error('descripcion')
-                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -94,8 +107,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         let recordatorioCount = 1;
-        
-        // Agregar recordatorio
+
         document.getElementById('add-recordatorio').addEventListener('click', function() {
             const container = document.getElementById('recordatorios-container');
             const recordatorioDiv = document.createElement('div');
@@ -123,12 +135,9 @@
             `;
             container.appendChild(recordatorioDiv);
             recordatorioCount++;
-            
-            // Actualizar eventos de quitar
             updateRemoveEvents();
         });
-        
-        // Función para actualizar eventos de quitar
+
         function updateRemoveEvents() {
             document.querySelectorAll('.remove-recordatorio').forEach(button => {
                 button.addEventListener('click', function() {
@@ -136,8 +145,7 @@
                 });
             });
         }
-        
-        // Inicializar eventos de quitar
+
         updateRemoveEvents();
     });
 </script>

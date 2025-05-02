@@ -35,12 +35,15 @@ class Cita extends Model
         'fecha_de_la_cita',
         'fecha_actualizacion_cita',
         'google_event_id',
+        'prefijo', // <<<<< NUEVO
         'recordatorios',
         'estado',
         'color_estado',
         'mensaje_enviado',
         'respuesta_cliente',
-        'user_id', // <<< AGREGAR ESTO
+        'user_id',
+        'telefono', // <<< recuerda que también tienes teléfono
+        'timezone', // <<< recuerda que también tienes teléfono
     ];
 
     /**
@@ -93,5 +96,23 @@ class Cita extends Model
     public function user()
     {
         return $this->belongsTo(\App\Models\User::class);
+    }
+
+    public function getTelefonoCompletoAttribute()
+    {
+        if (!$this->telefono) {
+            return null;
+        }
+
+        $prefijo = $this->prefijo ?? '57';
+
+        return $prefijo . $this->telefono;
+    }
+
+    public function getFechaCitaFormateadaAttribute()
+    {
+        return $this->fecha_de_la_cita
+            ? $this->fecha_de_la_cita->setTimezone($this->timezone)->format('d/m/Y H:i')
+            : null;
     }
 }

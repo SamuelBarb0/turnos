@@ -40,14 +40,55 @@
 
                 <div class="mb-6">
                     <label for="telefono" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Número de Teléfono del Cliente</label>
-                    <div class="flex">
-                        <span class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-r-0 border-gray-300 rounded-l-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600">
-                            +57
-                        </span>
-                        <input type="text" name="telefono" id="telefono" class="rounded-none rounded-r-lg bg-gray-50 border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="1234567890" required>
-                    </div>
-                    @error('telefono')
+
+                    <div x-data="{ bandera: '/flags/co.png' }" class="mb-6">
+                        <label for="prefijo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">País y código</label>
+                        <div class="flex items-center space-x-3">
+
+                            <!-- Bandera real -->
+                            <img :src="bandera" class="w-8 h-6" alt="Bandera">
+
+                            <!-- Select de países -->
+                            <select name="prefijo" id="prefijo" @change="bandera = $event.target.selectedOptions[0].dataset.flag"
+                                class="rounded bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+
+                                <option value="+1" data-flag="/flags/us.png">Estados Unidos (+1)</option>
+                                <option value="+52" data-flag="/flags/mx.png">México (+52)</option>
+                                <option value="+57" data-flag="/flags/co.png" selected>Colombia (+57)</option>
+                                <option value="+58" data-flag="/flags/ve.png">Venezuela (+58)</option>
+                                <option value="+51" data-flag="/flags/pe.png">Perú (+51)</option>
+                                <option value="+54" data-flag="/flags/ar.png">Argentina (+54)</option>
+                                <option value="+55" data-flag="/flags/br.png">Brasil (+55)</option>
+                                <option value="+56" data-flag="/flags/cl.png">Chile (+56)</option>
+                                <option value="+507" data-flag="/flags/pa.png">Panamá (+507)</option>
+                                <option value="+53" data-flag="/flags/cu.png">Cuba (+53)</option>
+                                <option value="+593" data-flag="/flags/ec.png">Ecuador (+593)</option>
+                                <option value="+502" data-flag="/flags/gt.png">Guatemala (+502)</option>
+                                <option value="+504" data-flag="/flags/hn.png">Honduras (+504)</option>
+                                <option value="+505" data-flag="/flags/ni.png">Nicaragua (+505)</option>
+                                <option value="+506" data-flag="/flags/cr.png">Costa Rica (+506)</option>
+                                <option value="+509" data-flag="/flags/ht.png">Haití (+509)</option>
+                                <option value="+592" data-flag="/flags/gy.png">Guyana (+592)</option>
+                                <option value="+595" data-flag="/flags/py.png">Paraguay (+595)</option>
+                                <option value="+598" data-flag="/flags/uy.png">Uruguay (+598)</option>
+                                <option value="+597" data-flag="/flags/sr.png">Surinam (+597)</option>
+                                <option value="+599" data-flag="/flags/bq.png">Caribe Neerlandés (+599)</option>
+                                <option value="+876" data-flag="/flags/jm.png">Jamaica (+876)</option>
+                            </select>
+
+                            <!-- Teléfono -->
+                            <input type="text" name="telefono" id="telefono"
+                                class="rounded bg-gray-50 border border-gray-300 text-gray-900 text-sm p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                placeholder="1234567890" required>
+                        </div>
+
+                        @error('telefono')
                         <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    @error('telefono')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -58,7 +99,7 @@
                         Este mensaje se enviará al cliente. Debe incluir instrucciones claras para confirmar o cancelar la cita.
                     </p>
                     @error('mensaje')
-                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                     @enderror
                 </div>
 

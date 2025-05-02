@@ -19,6 +19,8 @@
     @else
     <!-- Tailwind CSS (fallback) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs" defer></script>
+    
     <script>
         tailwind.config = {
             theme: {

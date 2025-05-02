@@ -27,7 +27,6 @@ class GoogleCalendarServices
         }
 
         $data = $response->json();
-
         $user->google_token = $data['access_token'];
         $user->save();
 
@@ -57,30 +56,43 @@ class GoogleCalendarServices
         ]);
     }
 
-    public function createEvent($user, $titulo, $descripcion, $fechaInicio, $fechaFin, $colorId = 8)
+    private function makeAuthorizedRequest($method, $url, $token, $data = [])
+    {
+        $response = Http::withToken($token)->{$method}($url, $data);
+
+        if ($response->unauthorized()) {
+            // Si el token expiró, refrescar y volver a intentar
+            $token = $this->refreshGoogleToken(auth()->user());
+            $response = Http::withToken($token)->{$method}($url, $data);
+        }
+
+        return $response;
+    }
+
+    public function createEvent($user, $titulo, $descripcion, $fechaInicio, $fechaFin, $colorId = 8, $timezone = 'America/Bogota')
     {
         if ($user->isAdmin() && !$user->google_token) {
-            return null; // Ignorar sin error
+            return null;
         }
 
         try {
             $token = $this->getValidToken($user);
 
-            $response = Http::withToken($token)
-                ->post('https://www.googleapis.com/calendar/v3/calendars/primary/events', [
-                    'summary' => $titulo,
-                    'description' => $descripcion,
-                    'start' => [
-                        'dateTime' => $fechaInicio->toRfc3339String(),
-                        'timeZone' => 'America/Bogota',
-                    ],
-                    'end' => [
-                        'dateTime' => $fechaFin->toRfc3339String(),
-                        'timeZone' => 'America/Bogota',
-                    ],
-                    'colorId' => $colorId,
-                ]);
+            $response = Http::withToken($token)->post('https://www.googleapis.com/calendar/v3/calendars/primary/events', [
+                'summary' => $titulo,
+                'description' => $descripcion,
+                'start' => [
+                    'dateTime' => $fechaInicio->toRfc3339String(),
+                    'timeZone' => $timezone,
+                ],
+                'end' => [
+                    'dateTime' => $fechaFin->toRfc3339String(),
+                    'timeZone' => $timezone,
+                ],
+                'colorId' => $colorId,
+            ]);
 
+            // Si fue unauthorized, refrescar token y reintentar
             if ($response->unauthorized()) {
                 $token = $this->refreshGoogleToken($user);
                 $response = Http::withToken($token)->post('https://www.googleapis.com/calendar/v3/calendars/primary/events', [
@@ -103,16 +115,21 @@ class GoogleCalendarServices
             }
 
             $data = $response->json();
-            $this->logAction($user->id, 'create', $data['id'] ?? null, 'success', $data);
+
+            if (empty($data['id'])) {
+                throw new Exception('No se recibió ID de evento. Evento no creado correctamente.');
+            }
+
+            $this->logAction($user->id, 'create', $data['id'], 'success', $data);
 
             return $data;
         } catch (Exception $e) {
             $this->logAction($user->id, 'create', null, 'error', $e->getMessage());
-            throw new Exception('Error al crear evento: ' . $e->getMessage());
+            throw $e;
         }
     }
 
-    public function updateEvent($user, $eventId, $titulo, $descripcion, $fechaInicio, $fechaFin, $colorId = 8)
+    public function updateEvent($user, $eventId, $titulo, $descripcion, $fechaInicio, $fechaFin, $colorId = 8, $timezone = 'America/Bogota')
     {
         if ($user->isAdmin() && !$user->google_token) {
             return null;
@@ -121,37 +138,24 @@ class GoogleCalendarServices
         try {
             $token = $this->getValidToken($user);
 
-            $response = Http::withToken($token)
-                ->patch("https://www.googleapis.com/calendar/v3/calendars/primary/events/{$eventId}", [
-                    'summary' => $titulo,
-                    'description' => $descripcion,
-                    'start' => [
-                        'dateTime' => $fechaInicio->toRfc3339String(),
-                        'timeZone' => 'America/Bogota',
-                    ],
-                    'end' => [
-                        'dateTime' => $fechaFin->toRfc3339String(),
-                        'timeZone' => 'America/Bogota',
-                    ],
-                    'colorId' => $colorId,
-                ]);
+            $response = $this->makeAuthorizedRequest('patch', "https://www.googleapis.com/calendar/v3/calendars/primary/events/{$eventId}", $token, [
+                'summary' => $titulo,
+                'description' => $descripcion,
+                'start' => [
+                    'dateTime' => $fechaInicio->toRfc3339String(),
+                    'timeZone' => $timezone,
+                ],
+                'end' => [
+                    'dateTime' => $fechaFin->toRfc3339String(),
+                    'timeZone' => $timezone,
+                ],
+                'colorId' => $colorId,
+            ]);
 
-            if ($response->unauthorized()) {
-                $token = $this->refreshGoogleToken($user);
-                $response = Http::withToken($token)
-                    ->patch("https://www.googleapis.com/calendar/v3/calendars/primary/events/{$eventId}", [
-                        'summary' => $titulo,
-                        'description' => $descripcion,
-                        'start' => [
-                            'dateTime' => $fechaInicio->toRfc3339String(),
-                            'timeZone' => 'America/Bogota',
-                        ],
-                        'end' => [
-                            'dateTime' => $fechaFin->toRfc3339String(),
-                            'timeZone' => 'America/Bogota',
-                        ],
-                        'colorId' => $colorId,
-                    ]);
+            if ($response->status() === 404) {
+                // Evento no existe, marcarlo como eliminado
+                $this->logAction($user->id, 'update', $eventId, 'error', 'Evento no encontrado en Google Calendar.');
+                return null;
             }
 
             if ($response->failed()) {
@@ -163,7 +167,7 @@ class GoogleCalendarServices
             return $response->json();
         } catch (Exception $e) {
             $this->logAction($user->id, 'update', $eventId, 'error', $e->getMessage());
-            throw new Exception('Error al actualizar evento: ' . $e->getMessage());
+            throw $e;
         }
     }
 
@@ -176,13 +180,12 @@ class GoogleCalendarServices
         try {
             $token = $this->getValidToken($user);
 
-            $response = Http::withToken($token)
-                ->delete("https://www.googleapis.com/calendar/v3/calendars/primary/events/{$eventId}");
+            $response = $this->makeAuthorizedRequest('delete', "https://www.googleapis.com/calendar/v3/calendars/primary/events/{$eventId}", $token);
 
-            if ($response->unauthorized()) {
-                $token = $this->refreshGoogleToken($user);
-                $response = Http::withToken($token)
-                    ->delete("https://www.googleapis.com/calendar/v3/calendars/primary/events/{$eventId}");
+            if ($response->status() === 404) {
+                // Evento no existe, ya está eliminado
+                $this->logAction($user->id, 'delete', $eventId, 'success', 'Evento ya no existe');
+                return true;
             }
 
             if ($response->failed()) {
@@ -194,7 +197,7 @@ class GoogleCalendarServices
             return true;
         } catch (Exception $e) {
             $this->logAction($user->id, 'delete', $eventId, 'error', $e->getMessage());
-            throw new Exception('Error al eliminar evento: ' . $e->getMessage());
+            throw $e;
         }
     }
 }
