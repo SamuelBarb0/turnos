@@ -13,7 +13,8 @@ use App\Http\Controllers\Admin\ContenidoSeccionController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\DashboardController; // Nuevo controlador para el dashboard personalizado
 use App\Http\Controllers\MercadoPagoController;
-use App\Http\Controllers\MensajeController; 
+use App\Http\Controllers\MensajeController;
+use App\Http\Controllers\Admin\PoliticaPrivacidadController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\FreePlanMiddleware;
 use Illuminate\Http\Request;
@@ -26,8 +27,8 @@ Route::get('/', function () {
 
     // Obtener metadatos SEO para la página de inicio
     $seo = \App\Models\SeoMetadata::where('page_slug', 'home')
-                                  ->orWhere('page_slug', '/')
-                                  ->first();
+        ->orWhere('page_slug', '/')
+        ->first();
 
     // Si no existe una página, muestra welcome sin datos dinámicos
     if (!$pagina) {
@@ -41,6 +42,8 @@ Route::get('/', function () {
 // Rutas para el blog (frontend) - Ahora usan el controlador
 Route::get('/blog', [BlogController::class, 'showBlog'])->name('blog.index');
 Route::get('/blog/{slug}', [BlogController::class, 'showArticulo'])->name('blog.show');
+
+Route::get('/politica-de-privacidad', [PoliticaPrivacidadController::class, 'show'])->name('politica');
 
 // Rutas de autenticación con Google
 Route::get('login/google', [GoogleController::class, 'redirectToGoogle'])->name('login.google');
@@ -75,7 +78,7 @@ Route::get('/dashboard', function () {
 
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
-    
+
     // CRUD de mensajes
     Route::resource('mensajes', MensajeController::class)
         ->except(['show']); // No necesitas "show" si no estás viendo un solo mensaje
@@ -84,7 +87,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
 
 // Grupo de rutas del dashboard (usuarios normales) 
 Route::middleware('auth')->prefix('dashboard')->name('dashboard.')->group(function () {
-    
+
     // Dashboard principal (Perfil + Resumen)
     Route::get('/', [DashboardController::class, 'index'])->name('index');
 
@@ -178,6 +181,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::delete('secciones/{seccion}/contenidos/{contenido}', [ContenidoSeccionController::class, 'destroy'])
         ->name('secciones.contenidos.destroy');
 
+    Route::get('/politica', [PoliticaPrivacidadController::class, 'edit'])->name('politica.edit');
+    Route::put('/politica', [PoliticaPrivacidadController::class, 'update'])->name('politica.update');
+
     Route::get('/seo', [SeoMetadataController::class, 'index'])->name('seo.index');
     Route::get('/seo/create', [SeoMetadataController::class, 'create'])->name('seo.create');
     Route::post('/seo', [SeoMetadataController::class, 'store'])->name('seo.store');
@@ -199,7 +205,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::put('/users/{id}/update-role', [UserController::class, 'updateRole'])->name('users.update-role');
     Route::delete('/users/{id}', [UserController::class, 'delete'])->name('users.delete');
-    
+
     // Administración de pagos
     Route::get('/payments/dashboard', [PaymentController::class, 'dashboard'])->name('payments.dashboard');
     Route::get('/payments/export', [PaymentController::class, 'export'])->name('payments.export');
