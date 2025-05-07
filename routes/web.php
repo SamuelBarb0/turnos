@@ -15,6 +15,7 @@ use App\Http\Controllers\DashboardController; // Nuevo controlador para el dashb
 use App\Http\Controllers\MercadoPagoController;
 use App\Http\Controllers\MensajeController;
 use App\Http\Controllers\FormularioContactoController;
+use App\Http\Controllers\Admin\CondicionesServicioController;
 use App\Http\Controllers\Admin\ContactoController;
 use App\Http\Controllers\Admin\PoliticaPrivacidadController;
 use Illuminate\Support\Facades\Route;
@@ -53,6 +54,8 @@ Route::get('login/google/callback', [GoogleController::class, 'handleGoogleCallb
 Route::get('/contacto', [ContactoController::class, 'show'])->name('contacto');
 Route::get('/contacto', [FormularioContactoController::class, 'show'])->name('contacto');
 Route::post('/contacto/enviar', [FormularioContactoController::class, 'enviar'])->name('contacto.enviar');
+Route::get('/condiciones-de-servicio', [CondicionesServicioController::class, 'show'])->name('condiciones');
+
 
 
 // Rutas para usuarios con plan gratuito - Configuración inicial
@@ -220,6 +223,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::get('/contacto', [ContactoController::class, 'index'])->name('contacto.index');
     Route::put('/contacto', [ContactoController::class, 'update'])->name('contacto.update');
+
+    Route::get('/condiciones', [CondicionesServicioController::class, 'edit'])->name('condiciones.edit');
+    Route::put('/condiciones', [CondicionesServicioController::class, 'update'])->name('condiciones.update');
 });
 
 // Ruta para mostrar páginas dinámicas - ESTA DEBE SER LA ÚLTIMA RUTA

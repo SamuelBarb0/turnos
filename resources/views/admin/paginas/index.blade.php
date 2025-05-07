@@ -42,6 +42,11 @@
                     Contacto
                 </a>
             </li>
+            <li class="mr-2">
+                <a class="inline-block py-2 px-4 text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300" href="#">
+                    Condiciones de Servicio
+                </a>
+            </li>
         </ul>
     </div>
 
@@ -319,6 +324,41 @@
                 </form>
             </div>
         </div>
+
+        <!-- Panel de Condiciones de Servicio (Oculto inicialmente) -->
+        <div id="condiciones-panel" class="hidden">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden p-6 space-y-6">
+                <form action="{{ route('admin.condiciones.update') }}" method="POST" onsubmit="syncConditionsContent()">
+                    @csrf
+                    @method('PUT')
+
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Editar Condiciones de Servicio</h2>
+
+                    <!-- Herramientas de edición -->
+                    <div class="bg-gray-50 p-3 rounded-t-md border border-gray-300 border-b-0 flex flex-wrap gap-2">
+                        <button type="button" onclick="conditionsMakeBold()" class="text-sm bg-white px-3 py-1 rounded border border-gray-300 hover:bg-gray-100" title="Negrita (Ctrl+B)">B</button>
+                        <button type="button" onclick="conditionsMakeItalic()" class="text-sm bg-white px-3 py-1 rounded border border-gray-300 hover:bg-gray-100" title="Cursiva (Ctrl+I)">I</button>
+                        <button type="button" onclick="conditionsMakeHeading()" class="text-sm bg-white px-3 py-1 rounded border border-gray-300 hover:bg-gray-100" title="Encabezado H3">H3</button>
+                        <button type="button" onclick="conditionsMakeList()" class="text-sm bg-white px-3 py-1 rounded border border-gray-300 hover:bg-gray-100" title="Lista">LI</button>
+                    </div>
+
+                    <!-- Editor visual -->
+                    <div id="conditions-editor"
+                        contenteditable="true"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#3161DD] focus:ring-[#3161DD] bg-white p-4 min-h-[300px] space-y-2 prose prose-sm max-w-none"
+                        style="outline: none;">
+                        {!! old('contenido', $condiciones->contenido ?? '') !!}
+                    </div>
+
+                    <!-- Campo oculto para enviar el contenido -->
+                    <input type="hidden" name="contenido" id="conditions-editor-hidden">
+
+                    <div class="flex justify-end mt-4">
+                        <button type="submit" class="px-4 py-2 bg-[#3161DD] hover:bg-[#2050C0] text-white rounded-md text-sm">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -329,6 +369,8 @@
         const blogPanel = document.getElementById('blog-panel');
         const politicaPanel = document.getElementById('politica-panel');
         const contactoPanel = document.getElementById('contacto-panel');
+        const condicionesPanel = document.getElementById('condiciones-panel');
+
 
         // Sincronizar el selector de color con el campo de texto
         const colorPicker = document.getElementById('blog_background_color');
@@ -376,12 +418,17 @@
                 }
             });
 
-            // Mostrar el panel correspondiente
+            // Ocultar todos los paneles
             paginasPanel.classList.add('hidden');
             blogPanel.classList.add('hidden');
             politicaPanel.classList.add('hidden');
             contactoPanel.classList.add('hidden');
 
+            // Añadir esta línea
+            const condicionesPanel = document.getElementById('condiciones-panel');
+            if (condicionesPanel) condicionesPanel.classList.add('hidden');
+
+            // Mostrar el panel correspondiente
             if (tabName === 'Páginas') {
                 paginasPanel.classList.remove('hidden');
             } else if (tabName === 'Blog') {
@@ -390,6 +437,9 @@
                 politicaPanel.classList.remove('hidden');
             } else if (tabName === 'Contacto') {
                 contactoPanel.classList.remove('hidden');
+            } else if (tabName === 'Condiciones de Servicio') {
+                // Añadir esta condición
+                condicionesPanel.classList.remove('hidden');
             }
         }
     });
@@ -444,5 +494,61 @@
         });
     });
 </script>
+<script>
+    function conditionsInsert(tag, placeholder = '') {
+        const editor = document.getElementById('conditions-editor');
+        const selection = window.getSelection();
+        const range = selection.getRangeAt(0);
+        const selectedText = selection.toString() || placeholder;
 
+        const element = document.createElement(tag);
+        element.textContent = selectedText;
+
+        range.deleteContents();
+        range.insertNode(element);
+
+        const newRange = document.createRange();
+        newRange.setStartAfter(element);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+
+        editor.focus();
+    }
+
+    function syncConditionsContent() {
+        document.getElementById('conditions-editor-hidden').value = document.getElementById('conditions-editor').innerHTML;
+    }
+
+    function conditionsMakeBold() {
+        document.execCommand('bold');
+    }
+
+    function conditionsMakeItalic() {
+        document.execCommand('italic');
+    }
+
+    function conditionsMakeHeading() {
+        document.execCommand('formatBlock', false, 'h3');
+    }
+
+    function conditionsMakeList() {
+        document.execCommand('insertUnorderedList');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Asegurar que el script se ejecuta solo cuando existe el editor
+        const editor = document.getElementById('conditions-editor');
+        if (editor) {
+            const hiddenInput = document.getElementById('conditions-editor-hidden');
+
+            // Agregar evento de envío al formulario
+            const form = document.querySelector('#condiciones-panel form');
+            if (form) {
+                form.addEventListener('submit', () => {
+                    hiddenInput.value = editor.innerHTML;
+                });
+            }
+        }
+    });
+</script>
 @endsection
