@@ -14,6 +14,8 @@ use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\DashboardController; // Nuevo controlador para el dashboard personalizado
 use App\Http\Controllers\MercadoPagoController;
 use App\Http\Controllers\MensajeController;
+use App\Http\Controllers\FormularioContactoController;
+use App\Http\Controllers\Admin\ContactoController;
 use App\Http\Controllers\Admin\PoliticaPrivacidadController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\FreePlanMiddleware;
@@ -48,6 +50,10 @@ Route::get('/politica-de-privacidad', [PoliticaPrivacidadController::class, 'sho
 // Rutas de autenticación con Google
 Route::get('login/google', [GoogleController::class, 'redirectToGoogle'])->name('login.google');
 Route::get('login/google/callback', [GoogleController::class, 'handleGoogleCallback']);
+Route::get('/contacto', [ContactoController::class, 'show'])->name('contacto');
+Route::get('/contacto', [FormularioContactoController::class, 'show'])->name('contacto');
+Route::post('/contacto/enviar', [FormularioContactoController::class, 'enviar'])->name('contacto.enviar');
+
 
 // Rutas para usuarios con plan gratuito - Configuración inicial
 Route::middleware(['auth', FreePlanMiddleware::class])->group(function () {
@@ -211,6 +217,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/payments/export', [PaymentController::class, 'export'])->name('payments.export');
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('/payments/{id}', [PaymentController::class, 'show'])->name('payments.show');
+
+    Route::get('/contacto', [ContactoController::class, 'index'])->name('contacto.index');
+    Route::put('/contacto', [ContactoController::class, 'update'])->name('contacto.update');
 });
 
 // Ruta para mostrar páginas dinámicas - ESTA DEBE SER LA ÚLTIMA RUTA
